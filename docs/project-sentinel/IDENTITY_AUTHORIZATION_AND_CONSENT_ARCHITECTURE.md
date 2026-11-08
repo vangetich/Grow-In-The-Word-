@@ -52,3 +52,11 @@ Cross-learner ID substitution, sibling isolation, guardian revocation, teen priv
 
 ## 9. Open owner/legal decisions
 Minimum age and age assurance; supported jurisdictions; independent teen account rights; guardian verification and dispute handling; mentor scope; emergency disclosure; consent wording/version; retention; data residency; whether minors can use the app without an account guardian. These require owner decisions and qualified legal review.
+
+## Additional owner direction: progressive autonomy and care arrangements
+
+The owner supports multiple learner profiles under one parent/guardian account, with separate privacy and authorization boundaries for each learner. The product should support a gradual Emerging Independence experience for ages 14–17 and ordinary adult account control from 18, subject to jurisdiction-specific legal requirements. These are product bands, not legal capacity determinations. Spiritual maturity may inform learning content, never override legal rights or determine access permissions.
+
+Add a Care & Access Pathway for legally appointed guardians, verified kinship/foster/alternative care, appropriately authorized institutional representatives, and children with no verified caregiver. Do not grant authority based solely on relationship claims, church role, employment or institutional affiliation. Where authority is unresolved, restrict access to public, non-personalized content and do not create sensitive personal records until a lawful pathway is established.
+
+The product is explicitly Christian but must be transparent and respectful toward non-Christian/non-religious households. Do not infer belief from behavior or use child data for coercive religious targeting. See LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY.md for the detailed proposal and legal-review requirements.
