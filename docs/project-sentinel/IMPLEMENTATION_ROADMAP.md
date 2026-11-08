@@ -17,11 +17,11 @@ Create audit branch and foundational documents; verify findings against code; co
 
 ## Phase 00D — International legal, child protection and intellectual property governance
 - **Created on the Phase 00D branch:** master international governance blueprint, governance acceptance criteria/test plan and starter jurisdiction assessment register.
-- **Status:** initial documentation baseline created; owner review, priority-market selection and qualified local legal/safeguarding/IP review remain outstanding.
+- **Status:** initial documentation baseline created; preliminary Kenya desk assessment added. Kenya remains research-in-progress and is not counsel-reviewed or launch-approved. Uganda, Tanzania and Rwanda assessments remain outstanding.
 - **Scope:** global baseline plus jurisdiction-specific assessment; child protection; privacy and consent; age assurance; legal authority and progressive autonomy; sensitive belief data; AI/provider governance; international transfers; copyright and content licensing; launch gates.
 - **Constraints:** documentation-only; preserve application source and Phase 00C architecture; no jurisdiction engine, authentication changes, database schema, production provider selection, real child-data processing or launch approval.
 - **Exit:** owner-approved blueprint; priority jurisdictions assessed with authoritative current sources and counsel status; controls mapped to evidence and acceptance tests; rights inventory model defined; critical gaps registered; no claim of legal compliance or launch readiness.
-- **Deliverables:** PHASE_00D_MASTER_INTERNATIONAL_GOVERNANCE_BLUEPRINT.md; PHASE_00D_ACCEPTANCE_CRITERIA_AND_TEST_PLAN.md; INTERNATIONAL_JURISDICTION_REGISTER.md.
+- **Deliverables:** PHASE_00D_MASTER_INTERNATIONAL_GOVERNANCE_BLUEPRINT.md; PHASE_00D_ACCEPTANCE_CRITERIA_AND_TEST_PLAN.md; INTERNATIONAL_JURISDICTION_REGISTER.md; KENYA_JURISDICTION_LEGAL_REQUIREMENTS_ASSESSMENT.md.
 - **Branch:** `project-sentinel/phase-00d-international-governance`, based on `project-sentinel/phase-00-audit`.
 
 ## Phase 01 — Identity, authorization and persistence
