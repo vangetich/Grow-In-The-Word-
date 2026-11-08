@@ -34,3 +34,15 @@
 
 ## Change control
 A decision is not approved because it appears in a proposal. Record approver, date, rationale, alternatives considered, consequences and superseding decision. Reopen only when new evidence or material scope change warrants it.
+
+## Owner feedback recorded — preliminary direction (2026-11-08)
+
+| ID | Direction | Status | Qualification |
+|---|---|---|---|
+| ADR-BE-015 | Evaluate Google Cloud Run as the leading hosting candidate while comparing alternatives | Owner-supported candidate | Not a production selection; runtime assurance and cost/region review remain |
+| ADR-BE-016 | Evaluate managed PostgreSQL as the primary transactional database candidate | Owner-supported candidate | Compare managed providers and document-database alternatives; no physical schema approved |
+| ADR-BE-017 | Support one parent/guardian account managing multiple learner profiles | Owner-supported product direction | Each learner retains separate identity, consent, privacy and resource-level authorization boundaries |
+| ADR-BE-018 | Introduce progressive autonomy for ages 14–17 and adult account control from 18, subject to law | Proposed product direction | Age bands are experience design, not legal capacity or independent consent declarations |
+| ADR-BE-019 | Introduce a Care & Access Pathway for guardianship, kinship/foster care, institutional care and no-verified-guardian cases | Proposed product requirement | Legal authority must be verified; no self-appointed guardian privilege |
+
+The detailed design is in LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY.md. Legal and safeguarding review is required before implementation. Spiritual maturity is not a permission or legal-capacity attribute.
