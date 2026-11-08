@@ -15,7 +15,7 @@ The Act creates a Personal Data Protection Commission (PDPC), registration requi
 
 Tanzania's PDPC states that a person must not collect or process personal data without registration as a controller or processor. The official PDPC site also lists the 2023 Personal Data Collection and Processing Regulations and the 2024 amendment. A regulator publication page now records the regulations as published 23 March 2026; the legal effect of that publication date, any republication/consolidation and any further amendments should be checked against the Gazette and OAG MIS before implementation.
 
-The Personal Data Protection Act treats sensitive data as requiring prior written consent, with special rules where the data subject is a minor. Religious reflections and beliefs must therefore be treated as sensitive data unless counsel confirms a specific applicable statutory ground. The Act's cross-border transfer framework and PDPC permit/registration procedures require a provider-location map before selecting hosting, AI, analytics or support services.
+The Personal Data Protection Act's definition of sensitive personal data expressly includes **data relating to children** and, where processed for what they reveal, religious or philosophical beliefs. Section 30 therefore makes the sensitive-data regime directly relevant to child profiles and child data generally, not only to prayer/reflection content. It requires prior written consent subject to statutory exceptions; where the data subject is a minor, consent is sought from a parent, guardian or another person recognized by law as acting on the person's behalf. Religious reflections and beliefs are additionally sensitive by category. The Act's cross-border transfer framework and PDPC permit/registration procedures require a provider-location map before selecting hosting, AI, analytics or support services.
 
 **Current jurisdiction status:** Research in progress. Tanzania is not approved for launch. Mainland/Zanzibar applicability, local privacy, child-protection and IP counsel review remains required.
 
@@ -60,9 +60,9 @@ For the global product baseline, keep under-18 users within the child-protection
 
 ### 4.2 Sensitive-data consent for minors
 
-Section 30 of the Personal Data Protection Act provides that sensitive personal data must not be processed without prior written consent of the data subject, subject to statutory exceptions. Where the person from whom consent is sought is a minor, a person of unsound mind or another person unable to consent, consent is to be sought from their parents, guardian, heirs, attorneys or another person recognized by law as acting on their behalf. The provision also lists exceptions to the written-consent prohibition; each exception must be tested against the actual purpose and facts.
+Section 3 of the Personal Data Protection Act defines sensitive personal data to include **data related to children** and, where processed for what they reveal, religious or philosophical beliefs. This means the sensitive-data regime is relevant to child personal data generally, not only to a child's faith journal. Section 30 provides that sensitive personal data must not be processed without prior written consent of the data subject, subject to statutory exceptions. Where the person from whom consent is sought is a minor, a person of unsound mind or another person unable to consent, consent is to be sought from their parents, guardian, heirs, attorneys or another person recognized by law as acting on their behalf. The provision also lists exceptions to the written-consent prohibition; each exception must be tested against the actual purpose and facts.
 
-Religious beliefs and private spiritual reflections should be treated as sensitive personal data for product design until counsel verifies the Act's full definition and application. A parent/guardian's consent to a learner account must not be treated as blanket written consent to every sensitive-data use, AI processing, disclosure, analytics, sponsorship report or cross-border transfer.
+Child-related data is expressly within the statutory sensitive-data definition; religious beliefs and private spiritual reflections are also sensitive where processed for what they reveal. Accordingly, the app must assess the section 30 written-consent/representative requirements for child data generally, with an additional purpose-specific review for belief/reflection content. A parent/guardian's consent to a learner account must not be treated as blanket written consent to every sensitive-data use, AI processing, disclosure, analytics, sponsorship report or cross-border transfer.
 
 ### 4.3 Best interests, parental responsibility and alternative care
 
@@ -168,7 +168,7 @@ A licence for display does not imply offline, audio, adaptation, commercial, ins
 |---|---|---|---|
 | TZ-01 | Mainland/Zanzibar scope split | Maintain separate subprofiles for Union and non-Union matters | Critical |
 | TZ-02 | Child/minor age definitions require full confirmation | Conservative under-18 product safeguard pending counsel | Critical |
-| TZ-03 | Sensitive-data prior written consent | Separate sensitive-data purpose and authorization records | Critical |
+| TZ-03 | Child-related data is expressly sensitive; sensitive-data prior written consent applies subject to exceptions | Treat child personal data generally as sensitive under the Act's definition; separately record any additional religious-belief processing purpose | Critical |
 | TZ-04 | Minor sensitive-data consent by legally recognized representative | Verify parent/guardian/recognized authority and scope | Critical |
 | TZ-05 | PDPC registration before processing | Entity classification and registration gate | Critical |
 | TZ-06 | Current 2023 Regulations and 2024 amendment | Reconcile with current PDPC publication and Gazette status | Critical |
