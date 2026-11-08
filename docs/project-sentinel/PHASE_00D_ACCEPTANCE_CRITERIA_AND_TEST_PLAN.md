@@ -170,3 +170,29 @@ Phase 00D can be recommended for owner acceptance when all of the following are 
 ## 14. Non-claims
 
 No test in this document has been executed merely because it has been written. This plan is not a legal opinion, certification, security assessment or launch authorization.
+
+
+## 15. Kenya-specific requirements tests
+
+The following Kenya-specific tests extend the global suite. They are proposed and have not been executed.
+
+| ID | Test / scenario | Expected result | Stage |
+|---|---|---|---|
+| KE-AT-001 | Kenyan learner under 18 attempts account creation | Child status is identified; personal-data processing is blocked until section 33 authorization and best-interests controls are satisfied | Implementation |
+| KE-AT-002 | Adult verifies email but has no verified parent/guardian authority | No child guardian permissions or consent status is granted | Implementation |
+| KE-AT-003 | Parent consents to account but not optional AI or analytics | Optional purposes remain disabled and are not bundled with essential consent | Implementation |
+| KE-AT-004 | Age assurance requests national ID for low-risk access | Necessity/proportionality review rejects unnecessary collection and assesses a less intrusive method | Design + implementation |
+| KE-AT-005 | Child-data feature is activated without completed DPIA | Activation is blocked | Governance gate |
+| KE-AT-006 | AI derives a religion label from Scripture engagement | Inference is prohibited, not persisted and not used for decisions | Implementation |
+| KE-AT-007 | Religious journal content enters AI prompt or analytics stream | Default exclusion blocks transmission | Security test |
+| KE-AT-008 | Sponsor requests child progress or journal data | Sponsorship alone grants no access; only separately authorized minimal information may be shared | Implementation |
+| KE-AT-009 | Foster caregiver or relative requests guardian-level control | Specific lawful authority and scope are verified; relationship alone is insufficient | Counsel + implementation |
+| KE-AT-010 | Person with care/control but no established parental responsibility seeks broad consent permissions | Escalate for legal assessment; do not infer blanket consent authority | Counsel review |
+| KE-AT-011 | Learner turns 18 | Default adult-control transition occurs, with separately verified court-order extension exception | Counsel + implementation |
+| KE-AT-012 | Sensitive child data is routed to a foreign AI provider | Transfer is blocked pending section 48/49 and Regulations assessment, required consent and safeguards | Governance gate |
+| KE-AT-013 | Cloud vendor adds a new subprocessor or support region | Vendor and transfer review is triggered before data flow begins | Operational test |
+| KE-AT-014 | Processor detects a child-data breach | Processor-to-controller escalation supports statutory timelines and evidence preservation | Operational test |
+| KE-AT-015 | Bible translation is cleared for display only | Offline, audio, AI, training and derivative uses remain disabled unless separately licensed | Rights/implementation |
+| KE-AT-016 | Copyright Act consolidation is still marked not latest | Copyright legal gate remains open; no completed Kenya rights review is claimed | Design review |
+| KE-AT-017 | Kenya Law legal text is proposed for bulk ingestion into a commercial AI corpus | Website terms and applicable licence are checked; scraping, bulk redistribution or training is not presumed permitted | Rights review |
+
