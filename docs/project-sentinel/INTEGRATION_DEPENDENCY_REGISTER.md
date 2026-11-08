@@ -14,5 +14,7 @@
 | DEP-10 | AI safety/context policy | AI companion | Minimise data exposure and fabricated citations | P1 |
 | DEP-11 | Observability/audit logging | Production rollout | Diagnose failures and investigate sensitive access | P1 |
 | DEP-12 | Retention/export/deletion policy | Real user onboarding | Govern personal data lifecycle | P1 |
+| DEP-13 | Offline asset/data cache and sync design | Any offline-readiness promise | Current status marker/simulator does not prove cached content or sync | P1 |
+| DEP-14 | Dependency version compatibility | Repeatable CI/build | Next 15 and eslint-config-next 16 require compatibility validation | P1 |
 
 Identity, persistence and authorization should be designed together. Central Growth Record must not be a client-side global store masquerading as durable persistence. Teen journaling must not ship with security assurances until the security design is implemented and tested.
