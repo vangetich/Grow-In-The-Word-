@@ -270,3 +270,36 @@ Proposed only; not executed.
 | RW-AT-016 | Translation licensed for display only | Offline, audio, adaptation, AI and commercial uses remain disabled unless separately licensed | Rights test |
 | RW-AT-017 | IP Law 31/2009 amendment status is unverified | Copyright gate remains open; no Rwanda distribution clearance is claimed | Design review |
 
+
+
+## 19. East African comparative governance acceptance tests
+
+Proposed design/governance tests; not implemented or executed. The detailed acceptance evidence and expected outcomes are in `EAST_AFRICAN_COMPARATIVE_LEGAL_REQUIREMENTS_AND_JURISDICTION_DIFFERENCES_MATRIX.md`.
+
+| ID | Test / review | Expected result | Stage |
+|---|---|---|---|
+| EA-COMP-001 | Country assessments and source versions are traceable | All four country profiles remain linked and versioned | Design review |
+| EA-COMP-002 | Regional baseline is compared with local rules | No local rule is erased by regional generalization | Counsel + design |
+| EA-COMP-003 | Tanzania territory is resolved | Mainland and Zanzibar non-Union rules can be distinguished | Counsel + design |
+| EA-COMP-004 | Rwanda age thresholds are separated | Under-16 Art. 9 consent trigger is not treated as adulthood; under-18 child protections remain | Counsel + design |
+| EA-COMP-005 | Kenya/Uganda child-data consent is correctly represented | Product autonomy cannot replace legally required authorization | Counsel + design |
+| EA-COMP-006 | Tanzania child-data sensitivity is represented | Child-related data is classified under PDPA sensitive-data definition | Counsel + design |
+| EA-COMP-007 | Religious-belief processing is purpose-limited | No inferred belief; separate ground, authorization and safeguards | Design + security |
+| EA-COMP-008 | Caregiver authority is scoped | Authority evidence, scope, expiry and revocation are required | Design review |
+| EA-COMP-009 | Child assent and legal authorization are distinct | Assent never substitutes for statutory authorization | Design review |
+| EA-COMP-010 | DPIA/best-interests gates precede high-risk child processing | Documented approvals and residual-risk disposition exist | Governance gate |
+| EA-COMP-011 | Registration requirements are resolved per entity/market | Regulator evidence or counsel-approved non-applicability | Counsel review |
+| EA-COMP-012 | Vendor and remote access map is complete | Every processor, subprocessor and access location is inventoried | Security review |
+| EA-COMP-013 | Transfer mechanisms are country-specific | Each destination and transfer route has approval | Counsel + design |
+| EA-COMP-014 | Rwanda foreign storage is independently authorized | Valid Art. 50 certificate is evidenced where required | Counsel review |
+| EA-COMP-015 | Breach response has local deadlines | Country-specific notification decision tree and contacts exist | Operational |
+| EA-COMP-016 | AI use is separately assessed | Model purpose, training, transfers and child safeguards are documented | Governance gate |
+| EA-COMP-017 | Consequential automated decisions receive human review | No prohibited AI-only decisions; audit trail exists | Design + security |
+| EA-COMP-018 | Online safeguarding is locally operationalized | Referral/reporting SOPs and trained owners exist for each market | Operational |
+| EA-COMP-019 | Copyright rights are item- and territory-specific | Rights registry and counsel review cover every distributed item | Rights review |
+| EA-COMP-020 | Offline/AI permissions are distinct | Display rights are not treated as offline or AI rights | Rights review |
+| EA-COMP-021 | Private reflections remain restricted | Parent, sponsor, analytics and AI access is denied by default | Security test |
+| EA-COMP-022 | Public learning fallback is separate | Non-personalized use creates no persistent learner record | Architecture test |
+| EA-COMP-023 | Policy decisions are explainable | Rule IDs, source versions, evidence and reasons are recorded | Design review |
+| EA-COMP-024 | Legal change control is connected to tests | Each material legal change triggers impact assessment | Governance review |
+| EA-COMP-025 | Desk research cannot approve launch | Launch requires counsel, technical and operational evidence | Governance gate |
