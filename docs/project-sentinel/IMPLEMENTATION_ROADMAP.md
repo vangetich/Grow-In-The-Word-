@@ -53,3 +53,13 @@ Every milestone needs scope, affected modules, dependency check, migration plan,
 - Explicitly separates legal authority, account autonomy and spiritual development. Spiritual maturity is not an authorization attribute.
 - Added safeguards for non-Christian/non-religious households: transparent Christian purpose, no inferred belief, no discriminatory denial and purpose-limited handling of religious reflections.
 - Detailed design: LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY.md. Legal and safeguarding review remains mandatory before implementation.
+
+
+## Phase 00D — East African comparative governance synthesis
+
+- **Created:** `EAST_AFRICAN_COMPARATIVE_LEGAL_REQUIREMENTS_AND_JURISDICTION_DIFFERENCES_MATRIX.md`.
+- **Scope:** comparative regional baseline, four-country legal-difference matrix, feature-level gates, jurisdiction-policy inputs/outputs, fail-closed conditions, vendor/transfer review, Scripture/content-rights model, online-safety governance, 25 comparative acceptance criteria and 16 policy test vectors.
+- **Key preserved differences:** Kenya/Uganda under-18 child-data authorization; Tanzania child-related data as sensitive and Mainland/Zanzibar distinction; Rwanda under-16 Article 9 consent trigger versus under-18 child protection; Rwanda foreign-storage certificate; Uganda Act 8 of 2026 copyright amendments.
+- **Status:** draft synthesis; owner review and local counsel review outstanding in all four jurisdictions.
+- **Constraints:** no application source changes; no Phase 00C architecture rewrite; no jurisdiction engine implementation; no provider selection; no real child-data processing; no launch approval.
+- **Next exit evidence:** owner review, jurisdiction-specific counsel answers, current-source verification, approved rule catalogue and traceable policy test cases.
