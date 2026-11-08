@@ -608,13 +608,13 @@ export default function HomePage() {
               {/* Header with Title and Filtering Controls */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#E5DEC9] pb-6 min-w-0">
                 <div className="max-w-2xl space-y-3 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#4A5D4E] dark:text-[#A7F3D0] min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#92400E] dark:text-[#FBBF24] min-w-0">
                     <span>Dedicated Exploration Studios</span>
                     <span aria-hidden="true">·</span>
                     <span>15-Year Formative Roadmap</span>
                   </div>
                   <h2
-                    className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1A1A1A] dark:text-[#F9F6F0]"
+                    className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1C1917] dark:text-[#FAF7F2]"
                     style={{
                       fontFamily: 'var(--font-display), serif',
                       textWrap: 'balance',
@@ -622,7 +622,7 @@ export default function HomePage() {
                   >
                     Dedicated Formation Studios &amp; Portals
                   </h2>
-                  <p className="text-sm sm:text-base text-[#44403C] dark:text-[#D6D3D1] leading-relaxed">
+                  <p className="text-sm sm:text-base text-[#1C1917] dark:text-[#FAF7F2] font-medium leading-relaxed">
                     Explore each dedicated environment in the Grow In The Word ecosystem.
                     Each studio has been crafted as an independent, distraction-free space with
                     a subtle 15-year developmental journey progress indicator.

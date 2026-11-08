@@ -35,6 +35,8 @@ import StudyTooltip from './StudyTooltip';
 import FullPageBibleReader, {
   CHAPTERS_READ_STORAGE_KEY,
 } from './FullPageBibleReader';
+import WeeklyReadingVelocityChart from './WeeklyReadingVelocityChart';
+import MonthlyReadingHeatmapChart from './MonthlyReadingHeatmapChart';
 import {
   BIBLE_CANON_BOOKS,
   TOTAL_BIBLE_CHAPTERS,
@@ -2980,6 +2982,24 @@ export default function BibleStudyReadingStudio({
             </div>
           );
         })()}
+
+        {/* WEEKLY READING VELOCITY GRAPH (7-Day Consistency via Recharts) */}
+        <WeeklyReadingVelocityChart
+          totalChaptersReadCanon={
+            Object.values(chaptersReadMap).filter(Boolean).length
+          }
+          activeBookName={currentPassage.book}
+          onLogVelocitySession={onEngageContent}
+        />
+
+        {/* 30-DAY VISUAL READING HEATMAP & JOURNEY STREAKS (Recharts Gamification) */}
+        <MonthlyReadingHeatmapChart
+          totalChaptersReadCanon={
+            Object.values(chaptersReadMap).filter(Boolean).length
+          }
+          activeBookName={currentPassage.book}
+          onLogHeatmapSession={onEngageContent}
+        />
 
         {/* Main Studio Container */}
         <div className="rounded-2xl bg-[#F9F6F0] border border-[#E5DEC9] shadow-sm overflow-hidden">

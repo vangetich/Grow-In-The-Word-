@@ -27,7 +27,10 @@ import {
   Activity,
   Layers,
   ShieldCheck,
+  CheckCircle2,
+  Compass,
 } from 'lucide-react';
+import Link from 'next/link';
 import MilestoneShareModal from '@/components/MilestoneShareModal';
 import GrowthHistoryD3Chart from '@/components/GrowthHistoryD3Chart';
 import WeeklyEngagementRecharts from '@/components/WeeklyEngagementRecharts';
@@ -103,6 +106,159 @@ const WEEKLY_GOAL_PRESETS = [
   {target: 3, label: '3 / wk · Steady Roots'},
   {target: 5, label: '5 / wk · Deep Sanctuary'},
 ];
+
+export interface ReadingPlanDayItem {
+  day: number;
+  chapterRef: string;
+  chapterQueryId: string;
+  focusTitle: string;
+}
+
+export interface GuidedReadingPlan {
+  id: string;
+  title: string;
+  ageGroupLabel: string;
+  themeSummary: string;
+  defaultDailyChapterGoal: number;
+  days: ReadingPlanDayItem[];
+}
+
+export const GUIDED_READING_PLANS: GuidedReadingPlan[] = [
+  {
+    id: 'mark-tweens',
+    title: 'Gospel of Mark for Tweens',
+    ageGroupLabel: 'Ages 8–12 · Historical Archive',
+    themeSummary:
+      'Fast-paced eyewitness sequence exploring Jesus’ servant leadership, miracles, and parables across Galilee and Jerusalem.',
+    defaultDailyChapterGoal: 1,
+    days: [
+      {
+        day: 1,
+        chapterRef: 'Mark 1',
+        chapterQueryId: 'mark-1',
+        focusTitle: 'The Wilderness Voice & Capernaum Healings',
+      },
+      {
+        day: 2,
+        chapterRef: 'Mark 4',
+        chapterQueryId: 'mark-4',
+        focusTitle: 'Parable of the Sower & Calming the Storm',
+      },
+      {
+        day: 3,
+        chapterRef: 'Mark 6',
+        chapterQueryId: 'mark-6',
+        focusTitle: 'Compassion in the Wilderness & Loaves',
+      },
+      {
+        day: 4,
+        chapterRef: 'Mark 8',
+        chapterQueryId: 'mark-8',
+        focusTitle: '“Who Do You Say I Am?” at Caesarea Philippi',
+      },
+      {
+        day: 5,
+        chapterRef: 'Mark 10',
+        chapterQueryId: 'mark-10',
+        focusTitle: 'Blessing the Children & Servant Greatness',
+      },
+      {
+        day: 6,
+        chapterRef: 'Mark 14',
+        chapterQueryId: 'mark-14',
+        focusTitle: 'Passover, Gethsemane & Honest Courage',
+      },
+      {
+        day: 7,
+        chapterRef: 'Mark 16',
+        chapterQueryId: 'mark-16',
+        focusTitle: 'Sunrise at the Empty Tomb',
+      },
+    ],
+  },
+  {
+    id: 'psalms-bedtime',
+    title: 'Psalms of Peace & Shelter',
+    ageGroupLabel: 'Ages 3–7 · Bedtime Sanctuary',
+    themeSummary:
+      'Gentle evening psalms of safety, creation wonder, and the Good Shepherd for unhurried bedtime rest.',
+    defaultDailyChapterGoal: 1,
+    days: [
+      {
+        day: 1,
+        chapterRef: 'Psalm 23',
+        chapterQueryId: 'psalms-23',
+        focusTitle: 'The Good Shepherd & Still Waters',
+      },
+      {
+        day: 2,
+        chapterRef: 'Psalm 4',
+        chapterQueryId: 'psalms-4',
+        focusTitle: 'In Peace I Will Lie Down and Sleep',
+      },
+      {
+        day: 3,
+        chapterRef: 'Psalm 8',
+        chapterQueryId: 'psalms-8',
+        focusTitle: 'Moon and Stars Which You Have Set in Place',
+      },
+      {
+        day: 4,
+        chapterRef: 'Psalm 121',
+        chapterQueryId: 'psalms-121',
+        focusTitle: 'The Keeper Who Never Slumbers',
+      },
+      {
+        day: 5,
+        chapterRef: 'Psalm 139',
+        chapterQueryId: 'psalms-139',
+        focusTitle: 'Fearfully and Wonderfully Made',
+      },
+    ],
+  },
+  {
+    id: 'harbor-lament',
+    title: 'Honest Lament & Wisdom',
+    ageGroupLabel: 'Ages 13–18 · Safe Harbor',
+    themeSummary:
+      'Unvarnished biblical wrestling with doubt, justice, meaning, and grace for teens.',
+    defaultDailyChapterGoal: 2,
+    days: [
+      {
+        day: 1,
+        chapterRef: 'Psalm 130',
+        chapterQueryId: 'psalms-130',
+        focusTitle: 'Out of the Depths: Honest Lament',
+      },
+      {
+        day: 2,
+        chapterRef: 'Ecclesiastes 3',
+        chapterQueryId: 'ecclesiastes-3',
+        focusTitle: 'A Time for Every Matter Under Heaven',
+      },
+      {
+        day: 3,
+        chapterRef: 'Micah 6',
+        chapterQueryId: 'micah-6',
+        focusTitle: 'Act Justly, Love Mercy, Walk Humbly',
+      },
+      {
+        day: 4,
+        chapterRef: 'John 1',
+        chapterQueryId: 'john-1',
+        focusTitle: 'Light Shining in the Darkness',
+      },
+      {
+        day: 5,
+        chapterRef: 'Romans 8',
+        chapterQueryId: 'romans-8',
+        focusTitle: 'Nothing Can Separate Us from Love',
+      },
+    ],
+  },
+];
+
+const READING_PLAN_STORAGE_KEY = 'grow_in_the_word_reading_plan_state_v1';
 
 export interface DailyAffirmationItem {
   id: string;
@@ -312,6 +468,86 @@ export default function SanctuaryDashboardBar({
   const [weeklyGoalTarget, setWeeklyGoalTarget] = useState<number>(3);
   const [weeklyCompletedSessions, setWeeklyCompletedSessions] =
     useState<number>(2);
+
+  // Guided Reading Plan State (e.g., 'Gospel of Mark for Tweens') with Daily Chapter Goals
+  const [activePlanId, setActivePlanId] = useState<string>('mark-tweens');
+  const [dailyChapterGoal, setDailyChapterGoal] = useState<number>(1);
+  const [completedPlanDaysMap, setCompletedPlanDaysMap] = useState<
+    Record<string, boolean>
+  >({
+    'mark-tweens-day-1': true,
+    'mark-tweens-day-2': true,
+  });
+
+  // Restore Reading Plan progress from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(READING_PLAN_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.activePlanId) setActivePlanId(parsed.activePlanId);
+          if (typeof parsed.dailyChapterGoal === 'number') {
+            setDailyChapterGoal(parsed.dailyChapterGoal);
+          }
+          if (
+            parsed.completedPlanDaysMap &&
+            typeof parsed.completedPlanDaysMap === 'object'
+          ) {
+            setCompletedPlanDaysMap(parsed.completedPlanDaysMap);
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const persistReadingPlanState = (
+    nextPlanId: string,
+    nextGoal: number,
+    nextMap: Record<string, boolean>
+  ) => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        READING_PLAN_STORAGE_KEY,
+        JSON.stringify({
+          activePlanId: nextPlanId,
+          dailyChapterGoal: nextGoal,
+          completedPlanDaysMap: nextMap,
+        })
+      );
+    } catch {
+      // ignore
+    }
+  };
+
+  const activeReadingPlan =
+    GUIDED_READING_PLANS.find((p) => p.id === activePlanId) ||
+    GUIDED_READING_PLANS[0];
+
+  const completedDaysInActivePlan = activeReadingPlan.days.filter(
+    (d) => completedPlanDaysMap[`${activeReadingPlan.id}-day-${d.day}`]
+  ).length;
+
+  const handleToggleReadingPlanDay = (planId: string, dayNum: number, chapterRef: string) => {
+    const key = `${planId}-day-${dayNum}`;
+    setCompletedPlanDaysMap((prev) => {
+      const isNowDone = !prev[key];
+      const nextMap = {...prev, [key]: isNowDone};
+      persistReadingPlanState(activePlanId, dailyChapterGoal, nextMap);
+      if (isNowDone) {
+        onManualNourish(
+          15,
+          `Completed Reading Plan Day ${dayNum}: ${chapterRef} (${activeReadingPlan.title})`
+        );
+      }
+      return nextMap;
+    });
+  };
 
   const currentStage =
     [...GROWTH_STAGES]
@@ -888,7 +1124,7 @@ export default function SanctuaryDashboardBar({
                     <div className="text-[10px] text-[#A8A29E] truncate">
                       {isNightSanctuary
                         ? '2100K Warm Amber palette active'
-                        : 'Day Cream high-contrast reading active'}
+                        : 'Day Time high-contrast reading active'}
                     </div>
                   </div>
                 </div>
@@ -903,11 +1139,11 @@ export default function SanctuaryDashboardBar({
                       : 'bg-[#292524] hover:bg-[#36312E] text-[#F9F6F0] border-[#44403C]'
                   }`}
                 >
-                  {isNightSanctuary ? 'Day Cream' : '2100K Night'}
+                  {isNightSanctuary ? 'Day Time' : '2100K Night'}
                 </button>
               </div>
 
-              {/* ITEM 7: Dashboard (Expandable Submenu) */}
+              {/* ITEM 7: Dashboard (Expandable Submenu with Guided Reading Plans) */}
               <div className="rounded-2xl bg-[#24211E]/90 border border-[#36312E] overflow-hidden transition-colors">
                 <button
                   type="button"
@@ -921,16 +1157,16 @@ export default function SanctuaryDashboardBar({
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-semibold text-[#FAF7F2]">
-                        Dashboard
+                        Dashboard &amp; Reading Plans
                       </div>
                       <div className="text-[10px] text-[#A8A29E] truncate">
-                        Goal rhythm, stage evolution &amp; activity log
+                        {activeReadingPlan.title} · Daily chapter goals &amp; rhythm
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0 text-[#A8A29E]">
                     <span className="text-[10px] font-mono text-[#FBBF24]">
-                      {weeklyCompletedSessions}/{weeklyGoalTarget} wk
+                      {completedDaysInActivePlan}/{activeReadingPlan.days.length} d
                     </span>
                     {expandedSubmenu === 'dashboard' ? (
                       <ChevronDown className="w-4 h-4 text-[#D97706]" />
@@ -947,8 +1183,159 @@ export default function SanctuaryDashboardBar({
                       animate={{opacity: 1, height: 'auto'}}
                       exit={{opacity: 0, height: 0}}
                       transition={{duration: 0.25}}
-                      className="px-3.5 pb-3.5 pt-1 border-t border-[#36312E] space-y-3"
+                      className="px-3.5 pb-3.5 pt-1 border-t border-[#36312E] space-y-3.5"
                     >
+                      {/* GUIDED READING PLAN FEATURE */}
+                      <div className="p-3 rounded-xl bg-[#1C1917] border border-[#D97706]/40 space-y-2.5 mt-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <Compass className="w-3.5 h-3.5 text-[#D97706]" />
+                            <span className="text-[10.5px] font-mono uppercase tracking-wider text-[#FBBF24] font-semibold">
+                              Guided Reading Plan
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-[#10B981]">
+                            {completedDaysInActivePlan}/{activeReadingPlan.days.length} Days Done
+                          </span>
+                        </div>
+
+                        {/* Plan Selector Tabs */}
+                        <div className="flex flex-wrap gap-1">
+                          {GUIDED_READING_PLANS.map((plan) => {
+                            const isSelected = plan.id === activeReadingPlan.id;
+                            return (
+                              <button
+                                key={plan.id}
+                                type="button"
+                                onClick={() => {
+                                  setActivePlanId(plan.id);
+                                  setDailyChapterGoal(plan.defaultDailyChapterGoal);
+                                  persistReadingPlanState(
+                                    plan.id,
+                                    plan.defaultDailyChapterGoal,
+                                    completedPlanDaysMap
+                                  );
+                                }}
+                                className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[#D97706] text-[#1A1A1A]'
+                                    : 'bg-[#292524] text-[#D6D3D1] hover:text-[#FAF7F2] border border-[#36312E]'
+                                }`}
+                              >
+                                {plan.title}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Active Plan Meta & Daily Chapter Goal Selector */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-[#A8A29E]">
+                            <span>{activeReadingPlan.ageGroupLabel}</span>
+                            <div className="flex items-center gap-1">
+                              <span>Daily Goal:</span>
+                              {[1, 2, 3].map((chGoal) => (
+                                <button
+                                  key={chGoal}
+                                  type="button"
+                                  onClick={() => {
+                                    setDailyChapterGoal(chGoal);
+                                    persistReadingPlanState(
+                                      activeReadingPlan.id,
+                                      chGoal,
+                                      completedPlanDaysMap
+                                    );
+                                  }}
+                                  className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold cursor-pointer ${
+                                    dailyChapterGoal === chGoal
+                                      ? 'bg-[#D97706] text-[#1A1A1A]'
+                                      : 'bg-[#292524] text-[#A8A29E] hover:text-[#FAF7F2]'
+                                  }`}
+                                >
+                                  {chGoal} ch/d
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-[#D6D3D1] leading-snug">
+                            {activeReadingPlan.themeSummary}
+                          </p>
+                          {/* Progress Bar */}
+                          <div className="w-full h-1.5 rounded-full bg-[#292524] overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-[#D97706] to-[#10B981] transition-all duration-300"
+                              style={{
+                                width: `${Math.round(
+                                  (completedDaysInActivePlan /
+                                    activeReadingPlan.days.length) *
+                                    100
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Daily Chapter Sequence Checklist */}
+                        <div className="max-h-[160px] overflow-y-auto space-y-1.5 pr-1">
+                          {activeReadingPlan.days.map((dayObj) => {
+                            const dayKey = `${activeReadingPlan.id}-day-${dayObj.day}`;
+                            const isDayDone = Boolean(completedPlanDaysMap[dayKey]);
+                            return (
+                              <div
+                                key={dayObj.day}
+                                className={`p-2 rounded-lg border flex items-center justify-between gap-2 text-[11px] transition-colors ${
+                                  isDayDone
+                                    ? 'bg-[#10B981]/10 border-[#10B981]/40 text-[#FAF7F2]'
+                                    : 'bg-[#24211E] border-[#36312E] text-[#D6D3D1]'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleToggleReadingPlanDay(
+                                      activeReadingPlan.id,
+                                      dayObj.day,
+                                      dayObj.chapterRef
+                                    )
+                                  }
+                                  className="flex items-start gap-2 text-left flex-1 min-w-0 cursor-pointer"
+                                >
+                                  <CheckCircle2
+                                    className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
+                                      isDayDone
+                                        ? 'text-[#10B981]'
+                                        : 'text-[#57534E] hover:text-[#D97706]'
+                                    }`}
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono text-[10px] text-[#FBBF24] font-semibold">
+                                        Day {dayObj.day} · {dayObj.chapterRef}
+                                      </span>
+                                    </div>
+                                    <div
+                                      className={`text-[10.5px] truncate ${
+                                        isDayDone ? 'line-through opacity-75' : ''
+                                      }`}
+                                    >
+                                      {dayObj.focusTitle}
+                                    </div>
+                                  </div>
+                                </button>
+
+                                <Link
+                                  href={`/bible-reader?chapter=${dayObj.chapterQueryId}`}
+                                  onClick={() => setIsSidebarMenuOpen(false)}
+                                  className="px-2 py-1 rounded bg-[#292524] hover:bg-[#D97706] text-[#FBBF24] hover:text-[#1A1A1A] font-mono text-[9.5px] font-semibold transition-colors shrink-0"
+                                >
+                                  Read →
+                                </Link>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       {/* Weekly Goal Selector */}
                       <div className="space-y-2 pt-1">
                         <div className="flex items-center justify-between text-[11px] text-[#A8A29E]">

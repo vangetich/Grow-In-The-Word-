@@ -2,6 +2,7 @@
 
 import React, {useState, useMemo, useEffect, useRef, useCallback} from 'react';
 import Link from 'next/link';
+import {motion, AnimatePresence} from 'motion/react';
 import {
   BookOpen,
   Columns3,
@@ -34,8 +35,10 @@ import {
   Square,
   Highlighter,
   Trash2,
+  Link2,
   Share2,
 } from 'lucide-react';
+import VerseQuoteCardModal from '@/components/VerseQuoteCardModal';
 import {
   FULL_BIBLE_CHAPTERS,
   FULL_BIBLE_VERSIONS,
@@ -108,6 +111,9 @@ export interface HighlightedVerse {
   text: string;
   color: HighlightColor;
   createdAt: number;
+  note?: string;
+  noteType?: 'reflection' | 'question' | 'prayer';
+  updatedAt?: number;
 }
 
 export type FontSizeOptionId = 'small' | 'medium' | 'large' | 'xlarge';
@@ -151,6 +157,97 @@ export const FONT_SIZE_OPTIONS: FontSizeOptionMeta[] = [
   },
 ];
 
+export interface AudioTimestampBookmark {
+  key: string;
+  bookId: string;
+  bookName: string;
+  chapterNumber: number;
+  version: BibleVersionId;
+  verseNumber: number;
+  timestampSeconds: number;
+  timestampLabel: string;
+  updatedAt: number;
+}
+
+export const AUDIO_BOOKMARKS_STORAGE_KEY = 'grow_in_the_word_audio_bookmarks_v1';
+
+export const CHAPTER_CROSS_REFERENCES: Record<
+  string,
+  Record<number, {reference: string; text: string; theme: string}>
+> = {
+  'psalms-23': {
+    1: {
+      reference: 'Ezekiel 34:11-12',
+      text: 'Behold, I Myself will search for My sheep and seek them out, as a shepherd cares for his herd...',
+      theme: 'Covenant Shepherd',
+    },
+    2: {
+      reference: 'Psalm 42:1-2',
+      text: 'As the deer pants for the water brooks, so my soul pants for You, O God.',
+      theme: 'Rest & Quiet Waters',
+    },
+    3: {
+      reference: 'Deuteronomy 30:6',
+      text: 'Moreover the LORD your God will circumcise your heart and the heart of your descendants...',
+      theme: 'Soul Restoration',
+    },
+    4: {
+      reference: 'Job 38:17',
+      text: 'Have the gates of death been revealed to you, or have you seen the gates of deep darkness?',
+      theme: 'Shadow of Death',
+    },
+    5: {
+      reference: 'Psalm 78:19',
+      text: 'Then they spoke against God; they said, “Can God prepare a table in the wilderness?”',
+      theme: 'Table in Presence of Enemies',
+    },
+    6: {
+      reference: 'Philippians 1:6',
+      text: 'For I am confident of this very thing, that He who began a good work in you will perfect it...',
+      theme: 'Chesed & Eternal Dwelling',
+    },
+  },
+  'john-1': {
+    1: {
+      reference: 'Genesis 1:1',
+      text: 'In the beginning God created the heavens and the earth.',
+      theme: 'Eternal Creation Logos',
+    },
+    3: {
+      reference: 'Colossians 1:16',
+      text: 'For by Him all things were created, both in the heavens and on earth...',
+      theme: 'Creation through the Word',
+    },
+    4: {
+      reference: 'John 8:12',
+      text: 'I am the Light of the world; he who follows Me will not walk in the darkness...',
+      theme: 'Life & Light',
+    },
+    5: {
+      reference: 'Isaiah 9:2',
+      text: 'The people who walked in darkness have seen a great light...',
+      theme: 'Unconquered Light',
+    },
+  },
+  'genesis-1': {
+    1: {
+      reference: 'John 1:1-3',
+      text: 'In the beginning was the Word, and the Word was with God, and the Word was God...',
+      theme: 'Divine Beginning',
+    },
+    2: {
+      reference: 'Isaiah 45:18',
+      text: 'For thus says the LORD, who created the heavens (He is the God who formed the earth)...',
+      theme: 'Formless & Void',
+    },
+    3: {
+      reference: '2 Corinthians 4:6',
+      text: 'For God, who said, “Light shall shine out of darkness,” is the One who has shone in our hearts...',
+      theme: 'Let There Be Light',
+    },
+  },
+};
+
 export interface FullPageBibleReaderProps {
   initialChapterId?: string;
   initialVersion?: BibleVersionId;
@@ -166,6 +263,19 @@ export interface FullPageBibleReaderProps {
 const FULL_READER_STORAGE_KEY = 'grow_in_the_word_full_page_reader_v1';
 export const CHAPTERS_READ_STORAGE_KEY = 'grow_in_the_word_chapters_read_v1';
 export const HIGHLIGHTS_STORAGE_KEY = 'grow_in_the_word_highlighted_verses_v1';
+export const READING_DURATION_STORAGE_KEY =
+  'grow_in_the_word_reading_duration_goals_v1';
+
+function getDurationPeriodKey(cadence: 'daily' | 'weekly'): string {
+  const now = new Date();
+  if (cadence === 'daily') {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const pastDaysOfYear = (now.getTime() - startOfYear.getTime()) / 86400000;
+  const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+  return `${now.getFullYear()}-W${weekNum}`;
+}
 
 export default function FullPageBibleReader({
   initialChapterId = 'psalm-23',
@@ -246,22 +356,75 @@ export default function FullPageBibleReader({
     Record<string, {verse: number; text: string}[]>
   >({});
 
-  // Audio Narration State (Web Speech API stream)
+  // Audio Narration & Guided Audio Reading State (Web Speech API stream + rhythmic pulse)
   const [isAudioPlayerVisible, setIsAudioPlayerVisible] = useState<boolean>(false);
   const [isNarrating, setIsNarrating] = useState<boolean>(false);
   const [isNarrationPaused, setIsNarrationPaused] = useState<boolean>(false);
   const [narrationSpeed, setNarrationSpeed] = useState<number>(1.0);
   const [narratingVerseNumber, setNarratingVerseNumber] = useState<number | null>(null);
+  const [isGuidedAudioMode, setIsGuidedAudioMode] = useState<boolean>(true);
+  const [rhythmicBeatStep, setRhythmicBeatStep] = useState<number>(0);
   const narrationCancelRef = useRef<boolean>(false);
   const currentNarratingIndexRef = useRef<number>(0);
 
-  // Local Text Highlighting State (persisted in localStorage)
+  // Persistent Audio Narration Bookmarks State (persisted in localStorage)
+  const [audioBookmarks, setAudioBookmarks] = useState<
+    Record<string, AudioTimestampBookmark>
+  >({});
+  const [narrationSeconds, setNarrationSeconds] = useState<number>(0);
+  const [resumedBookmarkNotice, setResumedBookmarkNotice] = useState<string | null>(null);
+
+  // Cross-Reference Peek Popover State
+  const [activePeekRef, setActivePeekRef] = useState<{
+    reference: string;
+    text: string;
+    theme: string;
+  } | null>(null);
   const [savedHighlights, setSavedHighlights] = useState<HighlightedVerse[]>([]);
   const [activeHighlightColor, setActiveHighlightColor] = useState<HighlightColor>('amber');
   const [isHighlightDrawerOpen, setIsHighlightDrawerOpen] = useState<boolean>(false);
   const [isHighlightModeActive, setIsHighlightModeActive] = useState<boolean>(false);
   const [highlightFilterColor, setHighlightFilterColor] = useState<'all' | HighlightColor>('all');
   const [copiedHighlightsNotice, setCopiedHighlightsNotice] = useState<boolean>(false);
+  const [editingNoteVerseId, setEditingNoteVerseId] = useState<string | null>(null);
+  const [noteDraftText, setNoteDraftText] = useState<string>('');
+  const [noteDraftType, setNoteDraftType] = useState<'reflection' | 'question' | 'prayer'>('reflection');
+
+  // Quote Card Share State
+  const [sharingVerse, setSharingVerse] = useState<HighlightedVerse | null>(null);
+
+  // Reading Duration Goals State (Daily & Weekly)
+  const [durationCadence, setDurationCadence] = useState<'daily' | 'weekly'>('daily');
+  const [durationTargetMinutes, setDurationTargetMinutes] = useState<number>(10);
+  const [durationElapsedSeconds, setDurationElapsedSeconds] = useState<number>(0);
+  const [hasCelebratedDuration, setHasCelebratedDuration] = useState<boolean>(false);
+  const [showCelebrationModal, setShowCelebrationModal] = useState<boolean>(false);
+  const [isDurationDropdownOpen, setIsDurationDropdownOpen] = useState<boolean>(false);
+  const durationDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close Duration Dropdown on outside click or Escape
+  useEffect(() => {
+    if (!isDurationDropdownOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        durationDropdownRef.current &&
+        !durationDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsDurationDropdownOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsDurationDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isDurationDropdownOpen]);
 
   // Close Font Size Dropdown on outside click or Escape
   useEffect(() => {
@@ -354,12 +517,80 @@ export default function FullPageBibleReader({
             }
           }
         }
+
+        // Restore Reading Duration Goals
+        const rawDuration = window.localStorage.getItem(
+          READING_DURATION_STORAGE_KEY
+        );
+        if (rawDuration) {
+          const parsedD = JSON.parse(rawDuration);
+          const currentKey = getDurationPeriodKey(parsedD.cadence || 'daily');
+          if (parsedD.cadence) setDurationCadence(parsedD.cadence);
+          if (parsedD.targetMinutes)
+            setDurationTargetMinutes(parsedD.targetMinutes);
+          if (parsedD.periodKey === currentKey) {
+            setDurationElapsedSeconds(parsedD.elapsedSeconds || 0);
+            setHasCelebratedDuration(Boolean(parsedD.hasCelebrated));
+          } else {
+            setDurationElapsedSeconds(0);
+            setHasCelebratedDuration(false);
+          }
+        }
       } catch {
         // ignore storage errors
       }
     }, 0);
     return () => clearTimeout(timer);
   }, [isOverlay]);
+
+  // Active Reading Duration Goal Timer (Ticks every 1s when reader tab is visible)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const interval = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+
+      setDurationElapsedSeconds((prev) => {
+        const next = prev + 1;
+        const targetSeconds = durationTargetMinutes * 60;
+
+        if (next >= targetSeconds && !hasCelebratedDuration) {
+          setHasCelebratedDuration(true);
+          setShowCelebrationModal(true);
+          onEngageContent?.(
+            25,
+            `Reached ${
+              durationCadence === 'daily' ? 'Daily' : 'Weekly'
+            } Reading Goal of ${durationTargetMinutes} minutes!`
+          );
+        }
+
+        if (next % 15 === 0 || next === targetSeconds) {
+          try {
+            window.localStorage.setItem(
+              READING_DURATION_STORAGE_KEY,
+              JSON.stringify({
+                cadence: durationCadence,
+                targetMinutes: durationTargetMinutes,
+                elapsedSeconds: next,
+                periodKey: getDurationPeriodKey(durationCadence),
+                hasCelebrated: next >= targetSeconds,
+              })
+            );
+          } catch {
+            // ignore
+          }
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [
+    durationTargetMinutes,
+    durationCadence,
+    hasCelebratedDuration,
+    onEngageContent,
+  ]);
 
   // Persist reader state to localStorage
   useEffect(() => {
@@ -665,6 +896,48 @@ export default function FullPageBibleReader({
     persistHighlights([]);
   }, [savedHighlights.length, persistHighlights]);
 
+  const handleOpenNoteEditor = useCallback((h: HighlightedVerse) => {
+    setEditingNoteVerseId(h.id);
+    setNoteDraftText(h.note || '');
+    setNoteDraftType(h.noteType || 'reflection');
+  }, []);
+
+  const handleSaveHighlightNote = useCallback(
+    (
+      highlightId: string,
+      noteText: string,
+      noteType: 'reflection' | 'question' | 'prayer'
+    ) => {
+      const trimmed = noteText.trim();
+      const updated = savedHighlights.map((h) => {
+        if (h.id === highlightId) {
+          return {
+            ...h,
+            note: trimmed.length > 0 ? trimmed : undefined,
+            noteType: trimmed.length > 0 ? noteType : undefined,
+            updatedAt: Date.now(),
+          };
+        }
+        return h;
+      });
+      persistHighlights(updated);
+      setEditingNoteVerseId(null);
+      if (trimmed.length > 0) {
+        onEngageContent?.(
+          10,
+          `Saved Personal ${
+            noteType === 'question'
+              ? 'Question'
+              : noteType === 'prayer'
+              ? 'Prayer Note'
+              : 'Reflection'
+          } on Highlighted Verse`
+        );
+      }
+    },
+    [savedHighlights, persistHighlights, onEngageContent]
+  );
+
   const handleCopyAllHighlights = useCallback(() => {
     if (
       savedHighlights.length === 0 ||
@@ -672,11 +945,20 @@ export default function FullPageBibleReader({
       !navigator.clipboard
     )
       return;
-    const lines = savedHighlights.map(
-      (h) =>
-        `• "${h.text}" — ${h.bookName} ${h.chapter}:${h.verse} (${h.version}) [${HIGHLIGHT_COLORS[h.color].label}]`
-    );
-    const text = `Grow In The Word — Study Highlights (${savedHighlights.length} Verses)\n\n${lines.join(
+    const lines = savedHighlights.map((h) => {
+      const base = `• "${h.text}" — ${h.bookName} ${h.chapter}:${h.verse} (${h.version}) [${HIGHLIGHT_COLORS[h.color].label}]`;
+      if (h.note) {
+        const typeLabel =
+          h.noteType === 'question'
+            ? 'Question'
+            : h.noteType === 'prayer'
+            ? 'Prayer'
+            : 'Reflection';
+        return `${base}\n  [${typeLabel}]: ${h.note}`;
+      }
+      return base;
+    });
+    const text = `Grow In The Word — Study Highlights & Reflections (${savedHighlights.length} Verses)\n\n${lines.join(
       '\n\n'
     )}`;
     navigator.clipboard
@@ -707,7 +989,87 @@ export default function FullPageBibleReader({
     return savedHighlights.filter((h) => h.color === highlightFilterColor);
   }, [savedHighlights, highlightFilterColor]);
 
-  // --- AUDIO NARRATION STREAM ENGINE (Web Speech API) ---
+  // --- AUDIO NARRATION STREAM & GUIDED AUDIO READING ENGINE (Web Speech API) ---
+  // Restore saved audio narration bookmarks from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(AUDIO_BOOKMARKS_STORAGE_KEY);
+        if (raw) {
+          setAudioBookmarks(JSON.parse(raw));
+        }
+      } catch {
+        // ignore
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const activeAudioBookmarkKey = `${currentBook.id}-${selectedChapterNumber}-${activeVersion}`;
+  const currentChapterAudioBookmark = audioBookmarks[activeAudioBookmarkKey];
+
+  const saveAudioBookmark = useCallback(
+    (vNum: number, secs: number) => {
+      const key = `${currentBook.id}-${selectedChapterNumber}-${activeVersion}`;
+      const mins = Math.floor(secs / 60);
+      const remSecs = secs % 60;
+      const timestampLabel = `${String(mins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+
+      const bookmark: AudioTimestampBookmark = {
+        key,
+        bookId: currentBook.id,
+        bookName: currentBook.name,
+        chapterNumber: selectedChapterNumber,
+        version: activeVersion,
+        verseNumber: vNum,
+        timestampSeconds: secs,
+        timestampLabel,
+        updatedAt: Date.now(),
+      };
+
+      setAudioBookmarks((prev) => {
+        const next = {...prev, [key]: bookmark};
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(
+              AUDIO_BOOKMARKS_STORAGE_KEY,
+              JSON.stringify(next)
+            );
+          } catch {
+            // ignore
+          }
+        }
+        return next;
+      });
+    },
+    [currentBook.id, currentBook.name, selectedChapterNumber, activeVersion]
+  );
+
+  // Audio narration seconds counter timer while narrating
+  useEffect(() => {
+    if (!isNarrating || isNarrationPaused) return;
+    const interval = setInterval(() => {
+      setNarrationSeconds((prev) => {
+        const next = prev + 1;
+        if (narratingVerseNumber !== null && next % 2 === 0) {
+          saveAudioBookmark(narratingVerseNumber, next);
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isNarrating, isNarrationPaused, narratingVerseNumber, saveAudioBookmark]);
+
+  // Rhythmic pulse beat indicator while narrating to help younger readers follow along
+  useEffect(() => {
+    if (!isNarrating || isNarrationPaused) return;
+    const interval = setInterval(() => {
+      setRhythmicBeatStep((prev) => (prev + 1) % 4);
+    }, 520);
+    return () => clearInterval(interval);
+  }, [isNarrating, isNarrationPaused]);
+
   const stopNarration = useCallback(() => {
     narrationCancelRef.current = true;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -754,10 +1116,21 @@ export default function FullPageBibleReader({
       currentNarratingIndexRef.current = verseIdx;
       narrationCancelRef.current = false;
       const v = currentChapter.verses[verseIdx];
+      saveAudioBookmark(v.verse, narrationSeconds);
       setNarratingVerseNumber(v.verse);
       setSelectedVerseNumber(v.verse);
       setIsNarrating(true);
       setIsNarrationPaused(false);
+
+      // Smoothly scroll the spoken verse into center view when Guided Audio Mode is active
+      if (isGuidedAudioMode && typeof document !== 'undefined') {
+        setTimeout(() => {
+          const el = document.getElementById(`guided-reader-verse-${v.verse}`);
+          if (el) {
+            el.scrollIntoView({behavior: 'smooth', block: 'center'});
+          }
+        }, 80);
+      }
 
       window.speechSynthesis.cancel();
 
@@ -784,7 +1157,15 @@ export default function FullPageBibleReader({
 
       window.speechSynthesis.speak(utterance);
     },
-    [currentChapter.verses, activeVersion, narrationSpeed, getNaturalVoice]
+    [
+      currentChapter.verses,
+      activeVersion,
+      narrationSpeed,
+      getNaturalVoice,
+      isGuidedAudioMode,
+      saveAudioBookmark,
+      narrationSeconds,
+    ]
   );
 
   useEffect(() => {
@@ -823,6 +1204,36 @@ export default function FullPageBibleReader({
     currentChapter.chapter,
     activeVersion,
     speakVerseByIndex,
+    onEngageContent,
+  ]);
+
+  const resumeNarrationFromBookmark = useCallback(() => {
+    const bookmark = audioBookmarks[activeAudioBookmarkKey];
+    if (bookmark) {
+      const targetVerseIdx = currentChapter.verses.findIndex(
+        (v) => v.verse === bookmark.verseNumber
+      );
+      const startIdx = targetVerseIdx >= 0 ? targetVerseIdx : 0;
+      setNarrationSeconds(bookmark.timestampSeconds);
+      setIsAudioPlayerVisible(true);
+      speakVerseByIndex(startIdx);
+      setResumedBookmarkNotice(
+        `Resumed audio narration at Verse ${bookmark.verseNumber} (${bookmark.timestampLabel})`
+      );
+      setTimeout(() => setResumedBookmarkNotice(null), 3200);
+      onEngageContent?.(
+        12,
+        `Resumed Audio Bookmark at Verse ${bookmark.verseNumber} (${bookmark.timestampLabel})`
+      );
+    } else {
+      startOrResumeNarration();
+    }
+  }, [
+    audioBookmarks,
+    activeAudioBookmarkKey,
+    currentChapter.verses,
+    speakVerseByIndex,
+    startOrResumeNarration,
     onEngageContent,
   ]);
 
@@ -1186,6 +1597,169 @@ export default function FullPageBibleReader({
               </button>
             </div>
 
+            {/* READING DURATION GOAL TRACKER & CELEBRATION DROPDOWN */}
+            <div className="relative" ref={durationDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDurationDropdownOpen((prev) => !prev)}
+                aria-expanded={isDurationDropdownOpen}
+                aria-haspopup="dialog"
+                aria-label="Reading Duration Goal Tracker"
+                className={`min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                  hasCelebratedDuration
+                    ? 'border-[#10B981] bg-[#10B981]/15 text-[#065F46] dark:text-[#34D399]'
+                    : isDurationDropdownOpen
+                    ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                    : mutedSurfaceClasses
+                }`}
+                title={`Reading Goal: ${Math.floor(durationElapsedSeconds / 60)}/${durationTargetMinutes} min (${durationCadence})`}
+              >
+                <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span className="font-mono">
+                  {Math.floor(durationElapsedSeconds / 60)}/{durationTargetMinutes}m
+                </span>
+                {hasCelebratedDuration ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
+                ) : (
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                      isDurationDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                )}
+              </button>
+
+              {isDurationDropdownOpen && (
+                <div
+                  role="dialog"
+                  aria-label="Reading Duration Goal Settings"
+                  className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-2xl border shadow-2xl p-3 space-y-3 z-50 ${surfaceClasses}`}
+                >
+                  <div className="flex items-center justify-between border-b border-current/10 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#D97706]" />
+                      <span className="text-xs font-bold font-mono uppercase tracking-wider text-[#92400E] dark:text-[#FBBF24]">
+                        Reading Duration Goal
+                      </span>
+                    </div>
+                    {hasCelebratedDuration && (
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#10B981]/20 text-[#065F46] dark:text-[#34D399]">
+                        Goal Met!
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Cadence Selection: Daily vs Weekly */}
+                  <div>
+                    <label className="text-[11px] font-mono opacity-75 block mb-1.5">
+                      Cadence:
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-current/5 border border-current/10 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDurationCadence('daily');
+                          setHasCelebratedDuration(false);
+                        }}
+                        className={`py-1.5 rounded-lg font-semibold transition-colors cursor-pointer text-center ${
+                          durationCadence === 'daily'
+                            ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917]'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        Daily Goal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDurationCadence('weekly');
+                          setHasCelebratedDuration(false);
+                        }}
+                        className={`py-1.5 rounded-lg font-semibold transition-colors cursor-pointer text-center ${
+                          durationCadence === 'weekly'
+                            ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917]'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        Weekly Goal
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Target Minutes Selection */}
+                  <div>
+                    <label className="text-[11px] font-mono opacity-75 block mb-1.5">
+                      Target Duration:
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[5, 10, 15, 20, 30, 45].map((mins) => {
+                        const isSelected = durationTargetMinutes === mins;
+                        return (
+                          <button
+                            key={mins}
+                            type="button"
+                            onClick={() => {
+                              setDurationTargetMinutes(mins);
+                              setHasCelebratedDuration(
+                                durationElapsedSeconds >= mins * 60
+                              );
+                            }}
+                            className={`py-1.5 px-2 rounded-xl border text-xs font-mono font-semibold transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                                : 'border-current/10 hover:border-[#D97706]/40'
+                            }`}
+                          >
+                            {mins} mins
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Current Progress Gauge */}
+                  <div className="p-2.5 rounded-xl bg-current/5 border border-current/10 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between font-mono text-[11px]">
+                      <span className="opacity-75">Progress ({durationCadence})</span>
+                      <span className="font-bold text-[#D97706]">
+                        {Math.floor(durationElapsedSeconds / 60)} of {durationTargetMinutes} min (
+                        {Math.min(
+                          100,
+                          Math.round(
+                            (durationElapsedSeconds / (durationTargetMinutes * 60)) * 100
+                          )
+                        )}
+                        %)
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-current/10 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-[#D97706] to-[#10B981] transition-all duration-300"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            (durationElapsedSeconds / (durationTargetMinutes * 60)) * 100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Celebratory trigger if already met */}
+                  {hasCelebratedDuration && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCelebrationModal(true)}
+                      className="w-full py-2 px-3 rounded-xl bg-[#10B981]/15 text-[#065F46] dark:text-[#34D399] border border-[#10B981]/30 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:bg-[#10B981]/25"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
+                      <span>View Celebratory Reward (+25 pts)</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* ACCESSIBLE FONT-SIZE CONTROL DROPDOWN (Small, Medium, Large, Extra Large) */}
             <div className="relative" ref={fontSizeDropdownRef}>
               <button
@@ -1280,24 +1854,38 @@ export default function FullPageBibleReader({
               )}
             </div>
 
-            {/* INTEGRATED AUDIO PLAYER COMPONENT IN TOOLBAR */}
+            {/* INTEGRATED AUDIO PLAYER COMPONENT IN TOOLBAR WITH PERSISTENT TIMESTAMP BOOKMARKS */}
             {!isAudioPlayerVisible && !isNarrating ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAudioPlayerVisible(true);
-                  startOrResumeNarration();
-                }}
-                aria-label="Listen to chapter read aloud"
-                className={`min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${mutedSurfaceClasses}`}
-                title={`Listen to ${currentBook.name} ${selectedChapterNumber} (${activeVersion}) at ${narrationSpeed}x`}
-              >
-                <Volume2 className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>Listen</span>
-                <span className="text-[10px] font-mono text-[#D97706] opacity-80">
-                  {narrationSpeed}x
-                </span>
-              </button>
+              <div className="inline-flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAudioPlayerVisible(true);
+                    startOrResumeNarration();
+                  }}
+                  aria-label="Listen to chapter read aloud"
+                  className={`min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${mutedSurfaceClasses}`}
+                  title={`Listen to ${currentBook.name} ${selectedChapterNumber} (${activeVersion}) at ${narrationSpeed}x`}
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                  <span>Listen</span>
+                  <span className="text-[10px] font-mono text-[#D97706] opacity-80">
+                    {narrationSpeed}x
+                  </span>
+                </button>
+
+                {currentChapterAudioBookmark && (
+                  <button
+                    type="button"
+                    onClick={resumeNarrationFromBookmark}
+                    className="min-h-[40px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#D97706]/15 hover:bg-[#D97706]/25 border border-[#D97706]/60 text-xs font-semibold text-[#92400E] dark:text-[#FBBF24] transition-all cursor-pointer shadow-2xs animate-in fade-in"
+                    title={`Resume audio narration from saved timestamp bookmark at Verse ${currentChapterAudioBookmark.verseNumber} (${currentChapterAudioBookmark.timestampLabel})`}
+                  >
+                    <BookmarkCheck className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>Resume v.{currentChapterAudioBookmark.verseNumber} ({currentChapterAudioBookmark.timestampLabel})</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <div
                 role="region"
@@ -1382,6 +1970,22 @@ export default function FullPageBibleReader({
                   <Square className="w-3 h-3 text-[#D97706]" />
                 </button>
 
+                {/* Bookmark Current Timestamp */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const vNum = narratingVerseNumber ?? selectedVerseNumber ?? 1;
+                    saveAudioBookmark(vNum, narrationSeconds);
+                    setResumedBookmarkNotice(`Saved audio bookmark at Verse ${vNum}`);
+                    setTimeout(() => setResumedBookmarkNotice(null), 2500);
+                  }}
+                  title="Bookmark Current Audio Timestamp"
+                  className="p-1 rounded-lg hover:bg-[#D97706]/20 text-[#1C1917] dark:text-[#FAF7F2] transition-colors cursor-pointer"
+                  aria-label="Bookmark current audio narration timestamp"
+                >
+                  <BookmarkCheck className="w-3.5 h-3.5 text-[#D97706]" />
+                </button>
+
                 {/* Speed Switcher */}
                 <div className="hidden sm:flex items-center gap-0.5 pl-1 border-l border-[#D97706]/30">
                   {[0.8, 1.0, 1.2].map((s) => (
@@ -1400,6 +2004,29 @@ export default function FullPageBibleReader({
                     </button>
                   ))}
                 </div>
+
+                {/* Visual Reading-Time Remaining Timer (Adjusted by Narration Speed) */}
+                {(() => {
+                  const currentIdx = narratingVerseNumber
+                    ? currentChapter.verses.findIndex((v) => v.verse === narratingVerseNumber)
+                    : 0;
+                  const remainingVerses = Math.max(
+                    0,
+                    currentChapter.verses.length - Math.max(0, currentIdx)
+                  );
+                  const totalSecsRemaining = Math.round(
+                    (remainingVerses * 5) / narrationSpeed
+                  );
+                  const remMins = Math.floor(totalSecsRemaining / 60);
+                  const remSecs = totalSecsRemaining % 60;
+                  const timeLabel = `${remMins}:${String(remSecs).padStart(2, '0')}`;
+                  return (
+                    <div className="hidden md:inline-flex items-center gap-1 font-mono text-[10.5px] text-[#92400E] dark:text-[#FBBF24] pl-2 border-l border-[#D97706]/30">
+                      <Clock className="w-3 h-3 text-[#D97706]" />
+                      <span>{timeLabel} left ({narrationSpeed}x)</span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -1527,6 +2154,23 @@ export default function FullPageBibleReader({
             )}
           </div>
         </div>
+
+        {/* Resumed Audio Bookmark Notification Banner */}
+        {resumedBookmarkNotice && (
+          <div className="px-4 py-1.5 bg-[#D97706] text-[#1A1A1A] font-bold text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-1">
+            <div className="flex items-center gap-2">
+              <BookmarkCheck className="w-4 h-4" />
+              <span>{resumedBookmarkNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setResumedBookmarkNotice(null)}
+              className="p-0.5 hover:bg-[#1A1A1A]/10 rounded cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Integrated Narration Chapter Progress Bar */}
         {(isNarrating || isAudioPlayerVisible) && (
@@ -1964,12 +2608,13 @@ export default function FullPageBibleReader({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredHighlights.map((h) => {
                     const colorMeta = HIGHLIGHT_COLORS[h.color];
+                    const isEditingThisNote = editingNoteVerseId === h.id;
                     return (
                       <div
                         key={h.id}
                         className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${surfaceClasses} hover:border-[#D97706]`}
                       >
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-mono text-xs font-bold text-[#D97706]">
                               {h.bookName} {h.chapter}:{h.verse} ({h.version})
@@ -1986,6 +2631,107 @@ export default function FullPageBibleReader({
                           >
                             &ldquo;{h.text}&rdquo;
                           </p>
+
+                          {/* PERSONAL REFLECTION / QUESTION NOTE SECTION */}
+                          {isEditingThisNote ? (
+                            <div className="p-3 rounded-xl bg-current/5 border border-[#D97706]/50 space-y-2 text-xs">
+                              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                <span className="font-mono text-[10px] uppercase tracking-wider text-[#92400E] dark:text-[#FBBF24] font-semibold">
+                                  Personal Study Note
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {(
+                                    [
+                                      {id: 'reflection', label: 'Reflection'},
+                                      {id: 'question', label: 'Question'},
+                                      {id: 'prayer', label: 'Prayer'},
+                                    ] as const
+                                  ).map((nt) => (
+                                    <button
+                                      key={nt.id}
+                                      type="button"
+                                      onClick={() => setNoteDraftType(nt.id)}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold cursor-pointer ${
+                                        noteDraftType === nt.id
+                                          ? 'bg-[#D97706] text-[#1A1A1A]'
+                                          : 'border border-current/20 opacity-75 hover:opacity-100'
+                                      }`}
+                                    >
+                                      {nt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <textarea
+                                rows={3}
+                                value={noteDraftText}
+                                onChange={(e) => setNoteDraftText(e.target.value)}
+                                placeholder={
+                                  noteDraftType === 'question'
+                                    ? 'Write an honest question this verse raises...'
+                                    : noteDraftType === 'prayer'
+                                    ? 'Write a personal prayer inspired by this verse...'
+                                    : 'Write a personal reflection or insight...'
+                                }
+                                className="w-full p-2.5 rounded-lg bg-transparent border border-current/20 focus:border-[#D97706] focus:outline-none text-xs leading-relaxed resize-none"
+                              />
+
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingNoteVerseId(null)}
+                                  className="px-2.5 py-1 rounded-lg border border-current/20 text-[11px] font-medium hover:bg-current/5 cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleSaveHighlightNote(
+                                      h.id,
+                                      noteDraftText,
+                                      noteDraftType
+                                    )
+                                  }
+                                  className="px-3 py-1 rounded-lg bg-[#D97706] hover:bg-[#F59E0B] text-[#1A1A1A] font-bold text-[11px] cursor-pointer"
+                                >
+                                  Save Note (+10 pts)
+                                </button>
+                              </div>
+                            </div>
+                          ) : h.note ? (
+                            <div className="p-2.5 rounded-xl bg-current/5 border-l-2 border-[#D97706] space-y-1 text-xs">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-mono text-[10px] uppercase tracking-wider text-[#92400E] dark:text-[#FBBF24] font-semibold">
+                                  {h.noteType === 'question'
+                                    ? 'Honest Question'
+                                    : h.noteType === 'prayer'
+                                    ? 'Prayer Response'
+                                    : 'Personal Reflection'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenNoteEditor(h)}
+                                  className="text-[10px] font-mono text-[#D97706] hover:underline cursor-pointer"
+                                >
+                                  Edit Note
+                                </button>
+                              </div>
+                              <p className="text-xs opacity-90 leading-relaxed whitespace-pre-wrap">
+                                {h.note}
+                              </p>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenNoteEditor(h)}
+                              className="w-full py-1.5 px-2.5 rounded-xl border border-dashed border-current/20 hover:border-[#D97706] text-[11px] font-mono opacity-75 hover:opacity-100 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <FileText className="w-3 h-3 text-[#D97706]" />
+                              <span>+ Add Personal Reflection or Question</span>
+                            </button>
+                          )}
                         </div>
 
                         <div className="pt-3 border-t border-current/10 flex items-center justify-between gap-2 text-xs">
@@ -1997,6 +2743,24 @@ export default function FullPageBibleReader({
                             Read in Context →
                           </button>
                           <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenNoteEditor(h)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-current/20 hover:border-[#D97706] font-semibold text-[11px] cursor-pointer"
+                              title="Add or edit personal reflection / question"
+                            >
+                              <FileText className="w-3 h-3 text-[#D97706]" />
+                              <span>{h.note ? 'Edit Note' : 'Note'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSharingVerse(h)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#D97706]/30 bg-[#D97706]/10 text-[#92400E] dark:text-[#FBBF24] hover:bg-[#D97706]/20 font-semibold text-[11px] cursor-pointer"
+                              title="Create Shareable Quote Card (Image & WhatsApp)"
+                            >
+                              <Share2 className="w-3 h-3 text-[#D97706]" />
+                              <span>Share Card</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -2179,6 +2943,69 @@ export default function FullPageBibleReader({
             </div>
           )}
 
+          {/* GUIDED AUDIO READING FOLLOW-ALONG BANNER WITH RHYTHMIC PULSE INDICATOR */}
+          {(isNarrating || isAudioPlayerVisible) && (
+            <div className="p-3.5 sm:px-5 rounded-2xl bg-[#1C1917] text-[#FAF7F2] border border-[#D97706] shadow-md flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Rhythmic 4-Bar Pulse Indicator for Younger Readers */}
+                <div
+                  aria-label="Rhythmic audio pulse indicator"
+                  className="w-9 h-9 rounded-xl bg-[#292524] border border-[#D97706] flex items-center justify-center gap-0.5 px-1.5 shrink-0"
+                >
+                  {[0, 1, 2, 3].map((barIdx) => {
+                    const isBeatActive =
+                      isNarrating &&
+                      !isNarrationPaused &&
+                      rhythmicBeatStep === barIdx;
+                    return (
+                      <span
+                        key={barIdx}
+                        className={`w-1 rounded-full bg-[#D97706] transition-all duration-300 ${
+                          isBeatActive
+                            ? 'h-5 bg-[#FBBF24] shadow-[0_0_6px_#FBBF24]'
+                            : isNarrating && !isNarrationPaused
+                            ? 'h-2.5 opacity-80'
+                            : 'h-1.5 opacity-40'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10.5px] font-mono uppercase tracking-wider text-[#FBBF24] font-semibold">
+                      Guided Audio Reading · Follow Along
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D97706]/20 text-[#FDE68A] border border-[#D97706]/40">
+                      {isNarrating && !isNarrationPaused
+                        ? `Speaking Verse ${narratingVerseNumber ?? 1}`
+                        : 'Ready to Read Aloud'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#D6D3D1] truncate mt-0.5">
+                    Verses highlight and pulse in rhythm as they are spoken to help younger readers follow every line.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsGuidedAudioMode((prev) => !prev)}
+                  aria-pressed={isGuidedAudioMode}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                    isGuidedAudioMode
+                      ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                      : 'bg-[#292524] text-[#D6D3D1] border-[#3E3834]'
+                  }`}
+                >
+                  {isGuidedAudioMode ? 'Auto-Scroll & Pulse: ON' : 'Auto-Scroll: OFF'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* MODE 1: SIMPLE & CLEAR SINGLE CHAPTER BOOK PAGE FORMAT */}
           {layoutMode === 'page' && (
             <article
@@ -2217,7 +3044,7 @@ export default function FullPageBibleReader({
                       isNarrating && narratingVerseNumber === v.verse;
 
                     const highlightClasses = isCurrentlyNarrated
-                      ? 'bg-[#D97706]/30 ring-2 ring-[#D97706] shadow-sm animate-pulse rounded-lg'
+                      ? 'bg-[#D97706]/30 ring-2 ring-[#D97706] shadow-md rounded-lg'
                       : highlight
                       ? `${HIGHLIGHT_COLORS[highlight.color].lightBg} ${
                           HIGHLIGHT_COLORS[highlight.color].darkBg
@@ -2232,6 +3059,7 @@ export default function FullPageBibleReader({
                       <React.Fragment key={v.verse}>
                         {startNewBlock && <div className="h-4 clear-both" />}
                         <span
+                          id={`guided-reader-verse-${v.verse}`}
                           onClick={() => {
                             if (isHighlightModeActive) {
                               handleToggleHighlightVerse(v.verse);
@@ -2268,6 +3096,15 @@ export default function FullPageBibleReader({
                           }
                           className={`inline px-1.5 py-0.5 transition-all cursor-pointer ${highlightClasses}`}
                         >
+                          {isCurrentlyNarrated && (
+                            <span
+                              aria-label="Rhythmic pulse indicator"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 mr-1.5 rounded bg-[#1C1917] text-[#FBBF24] font-mono text-[10px] font-bold align-middle shadow-xs"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-[#D97706] animate-ping inline-block" />
+                              <span>Speaking</span>
+                            </span>
+                          )}
                           <sup className="font-mono text-[11px] font-bold text-[#D97706] mr-1.5 select-none">
                             {v.verse}
                           </sup>
@@ -2421,6 +3258,32 @@ export default function FullPageBibleReader({
                                 {v.verse}
                               </sup>
                               <span>{v.text[activeVersion]} </span>
+                          {CHAPTER_CROSS_REFERENCES[currentBook.id]?.[v.verse] && (
+                            <span
+                              onMouseEnter={() =>
+                                setActivePeekRef(
+                                  CHAPTER_CROSS_REFERENCES[currentBook.id][v.verse]
+                                )
+                              }
+                              onMouseLeave={() => setActivePeekRef(null)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const refItem = CHAPTER_CROSS_REFERENCES[currentBook.id][v.verse];
+                                setActivePeekRef(
+                                  activePeekRef?.reference === refItem.reference
+                                    ? null
+                                    : refItem
+                                );
+                              }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 ml-1.5 rounded-md bg-[#D97706]/15 hover:bg-[#D97706]/25 border border-[#D97706]/40 text-[#92400E] dark:text-[#FBBF24] font-mono text-[10px] font-semibold transition-colors cursor-pointer align-middle"
+                              title={`Hover or click to peek cross-reference: ${
+                                CHAPTER_CROSS_REFERENCES[currentBook.id][v.verse].reference
+                              }`}
+                            >
+                              <Link2 className="w-2.5 h-2.5 text-[#D97706]" />
+                              <span>Ref: {CHAPTER_CROSS_REFERENCES[currentBook.id][v.verse].reference}</span>
+                            </span>
+                          )}
                             </span>
                           </React.Fragment>
                         );
@@ -2778,6 +3641,34 @@ export default function FullPageBibleReader({
                       </button>
                     )}
                   </div>
+
+                  <span className="opacity-50">|</span>
+
+                  {/* Share Verse Quote Card */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const text = selectedVerseObj.text[activeVersion];
+                      const highlightKey = `${currentBook.id}-${currentChapter.chapter}-${selectedVerseObj.verse}`;
+                      const existingColor = highlightsMap[highlightKey]?.color || 'amber';
+                      setSharingVerse({
+                        id: highlightKey,
+                        bookId: currentBook.id,
+                        bookName: currentBook.name,
+                        chapter: currentChapter.chapter,
+                        verse: selectedVerseObj.verse,
+                        version: activeVersion,
+                        text,
+                        color: existingColor,
+                        createdAt: Date.now(),
+                      });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D97706]/40 bg-[#D97706]/10 text-[#92400E] dark:text-[#FBBF24] font-semibold hover:bg-[#D97706]/20 transition-colors cursor-pointer"
+                    title="Create formatted quote card to share on WhatsApp or save as image"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>Share Quote Card</span>
+                  </button>
                 </div>
 
                 <div className="text-[11px] font-mono opacity-70">
@@ -3027,6 +3918,139 @@ export default function FullPageBibleReader({
           </div>
         </aside>
       )}
+
+      {/* READING DURATION CELEBRATORY PROMPT MODAL */}
+      {showCelebrationModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="celebration-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setShowCelebrationModal(false)}
+        >
+          <div
+            className={`w-full max-w-md rounded-3xl border border-[#D97706]/40 p-6 sm:p-8 shadow-2xl relative space-y-5 text-center ${surfaceClasses}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCelebrationModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-current/60 hover:text-current hover:bg-current/10 cursor-pointer"
+              aria-label="Close celebration dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Radiant Icon Header */}
+            <div className="w-16 h-16 rounded-2xl mx-auto bg-gradient-to-br from-[#D97706] to-[#F59E0B] text-[#1A1A1A] flex items-center justify-center shadow-lg shadow-[#D97706]/20 ring-4 ring-[#D97706]/20">
+              <Sparkles className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 text-[#065F46] dark:text-[#34D399] font-mono text-xs font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{durationCadence === 'daily' ? 'Daily' : 'Weekly'} Target Met</span>
+              </div>
+              <h2
+                id="celebration-title"
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1C1917] dark:text-[#FAF7F2]"
+                style={{fontFamily: 'var(--font-display), Georgia, serif'}}
+              >
+                Reading Goal Achieved!
+              </h2>
+              <p className="text-sm opacity-80 leading-relaxed max-w-sm mx-auto">
+                You have devoted{' '}
+                <strong className="text-[#D97706]">
+                  {durationTargetMinutes} minutes
+                </strong>{' '}
+                to immersed biblical reading and reflection. Consistent time in the Word anchors the soul.
+              </p>
+            </div>
+
+            {/* Growth Reward Pill */}
+            <div className="p-3.5 rounded-2xl bg-current/5 border border-current/10 flex items-center justify-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#D97706]/20 text-[#D97706] flex items-center justify-center font-bold text-sm">
+                🌱
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold font-mono text-[#D97706]">
+                  +25 Faith Seed Points Awarded
+                </div>
+                <div className="text-[11px] opacity-70">
+                  Added to your child & family growth history
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCelebrationModal(false);
+                  setIsHighlightDrawerOpen(true);
+                }}
+                className={`py-2.5 px-4 rounded-xl border font-semibold text-xs transition-colors cursor-pointer ${mutedSurfaceClasses} hover:border-[#D97706]`}
+              >
+                View Highlights
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCelebrationModal(false)}
+                className="py-2.5 px-4 rounded-xl bg-[#D97706] text-[#1A1A1A] font-bold text-xs hover:bg-[#F59E0B] transition-colors cursor-pointer shadow-md"
+              >
+                Continue Reading
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VERSE QUOTE CARD SHARING MODAL (Canvas High-Res Image & WhatsApp) */}
+      <VerseQuoteCardModal
+        isOpen={Boolean(sharingVerse)}
+        onClose={() => setSharingVerse(null)}
+        verse={sharingVerse}
+        onEngage={onEngageContent}
+      />
+
+      {/* CROSS-REFERENCE PEEK POPOVER */}
+      <AnimatePresence>
+        {activePeekRef && (
+          <motion.div
+            role="dialog"
+            aria-label="Cross-Reference Scripture Peek"
+            initial={{opacity: 0, y: 6, scale: 0.98}}
+            animate={{opacity: 1, y: 0, scale: 1}}
+            exit={{opacity: 0, y: 4, scale: 0.98}}
+            transition={{duration: 0.16}}
+            className="fixed bottom-6 right-6 z-50 w-[min(340px,calc(100vw-2rem))] p-4 rounded-2xl bg-[#1C1917] text-[#FAF7F2] border border-[#D97706] shadow-2xl backdrop-blur-xl space-y-2 text-left font-sans"
+          >
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#36312E]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <BookOpen className="w-4 h-4 text-[#D97706] shrink-0" />
+                <span className="font-mono text-xs font-bold text-[#FBBF24] truncate">
+                  {activePeekRef.reference}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePeekRef(null)}
+                className="w-5 h-5 rounded-full bg-[#292524] hover:bg-[#36312E] text-[#A8A29E] hover:text-[#FAF7F2] flex items-center justify-center cursor-pointer"
+                aria-label="Close cross-reference peek"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="text-[10px] font-mono text-[#D6D3D1]">
+              Theme: <strong className="text-[#FAF7F2]">{activePeekRef.theme}</strong>
+            </div>
+            <p className="text-xs text-[#E7E5E4] italic leading-relaxed">
+              “{activePeekRef.text}”
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
