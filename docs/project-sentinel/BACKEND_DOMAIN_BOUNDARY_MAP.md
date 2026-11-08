@@ -68,3 +68,9 @@ A learner moving between age experiences must retain only records whose retentio
 - What is the minimum age and jurisdiction model for independent learner consent?
 - Which reflection features are truly private journal content versus ordinary learning notes?
 - Which content catalogue items are owned, licensed, linked or fetched externally?
+
+## Additional domain boundary: Care & Access Pathway
+
+Care relationships and authority evidence belong within Identity & Governance, with an explicit Care & Access workflow. Distinguish parent, legally appointed guardian, kinship/foster caregiver, institutional representative and unverified caregiver. No relationship label alone grants authorization. Institutional representatives receive scoped access only to learners and actions for which authority is verified. A child without verified authority may receive public non-personalized content but must not be enrolled into sensitive personalized processing by a workaround.
+
+Religious identity is not required to access public learning content and must not be inferred. The product's Christian purpose must be disclosed transparently. Religious reflections/belief data require sensitive classification and purpose-limited processing.
