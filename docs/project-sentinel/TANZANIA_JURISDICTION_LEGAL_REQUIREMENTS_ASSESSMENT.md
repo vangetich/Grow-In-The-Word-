@@ -54,7 +54,7 @@ The Act's application provisions also address manual/automated processing and pr
 
 ### 4.1 Child and minor definitions
 
-The Law of the Child Act 2009 (Chapter 13) is the principal child-rights and welfare statute for Mainland Tanzania. OAG MIS records the revised Act as published 25 April 2025. The Personal Data Protection Act separately uses the concept of a minor for consent and sensitive-data provisions. The exact definition and cross-reference must be checked in the current revised Act and applicable Zanzibar legislation before the product assigns an age threshold.
+The Law of the Child Act 2009 (Chapter 13) is the principal child-rights and welfare statute for Mainland Tanzania. OAG MIS records the revised Act as published 25 April 2025. The Personal Data Protection Act section 3 expressly defines “child” by reference to the Child Act. The Act separately uses “minor” in section 30(4) for representative consent. The precise current text of the revised Child Act and applicable Zanzibar legislation should still be checked by counsel before the product assigns a final age rule.
 
 For the global product baseline, keep under-18 users within the child-protection safeguards until counsel confirms any narrower or different statutory category for a specific purpose. This is a conservative product baseline, not a claim that every Tanzanian legal rule uses the same age definition.
 
@@ -107,7 +107,7 @@ The Act and Regulations also govern data-subject rights, security, controller/pr
 
 ## 7. Cross-border transfers and hosting
 
-The Act and Regulations regulate transborder flows and require the controller/processor to follow the statutory approval, safeguards and documentation requirements. The official PDPC site includes a cross-border data-transfer permit service reference. The precise permit application, transfer basis, destination assessment, onward-transfer and sensitive-data conditions must be confirmed from current PDPC instruments and practice.
+Sections 31–32 regulate transfers to countries with adequate protection and to countries without adequate protection. Section 31 permits transfers to an adequate-protection country subject to the statutory necessity and purpose conditions and a provisional necessity assessment. Section 32 provides additional conditions for other destinations, including an adequacy assessment and specified exceptions (which include consent in the circumstances set out in the section) and permits Commission authorization where appropriate safeguards are demonstrated. The Commission may prohibit a transfer. The PDPC website also exposes a cross-border data-transfer permit service. The precise permit application, destination assessment, onward-transfer and sensitive-data conditions must be confirmed from current regulations and Commission practice.
 
 **Proposed control:** no foreign hosting, AI, analytics, backup, support access or subprocessor data flow until:
 1. the applicable Mainland/Zanzibar legal profile is established;
