@@ -99,3 +99,22 @@ A status change must include reviewer, date, evidence and scope. "Approved for l
 - Map all proposed data flows and providers before transfer analysis.
 - Inventory Bible translations, commentaries, images, audio, video and APIs before rights review.
 - Identify which features are available to unauthenticated visitors versus registered learners and children.
+
+
+## 9. East African comparative synthesis
+
+The four preliminary country assessments have been consolidated in:
+
+- `EAST_AFRICAN_COMPARATIVE_LEGAL_REQUIREMENTS_AND_JURISDICTION_DIFFERENCES_MATRIX.md`
+
+**Status:** Draft comparative synthesis; owner review pending; not counsel-reviewed; not launch approval.
+
+The matrix identifies a proposed common product baseline, local legal differences, feature-level gates, policy inputs/outputs, 25 comparative acceptance criteria and 16 policy test vectors. It preserves:
+- Kenya and Uganda under-18 child-data authorization rules;
+- Tanzania's sensitive classification of child-related data and Mainland/Zanzibar non-Union distinction;
+- Rwanda's under-16 Article 9 consent trigger alongside under-18 child-protection status;
+- Rwanda's separate foreign-storage certificate requirement;
+- Uganda's 2026 copyright amendment; and
+- unresolved copyright/current-law and online-safety work in all four markets.
+
+The matrix is a governance input only. It does not authorize a Jurisdiction Rules Engine implementation, real child-data processing, provider selection or launch.
