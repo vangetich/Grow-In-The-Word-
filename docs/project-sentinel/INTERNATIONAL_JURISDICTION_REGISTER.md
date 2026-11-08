@@ -37,7 +37,7 @@ Each completed profile must record:
 
 | Jurisdiction | Initial source families to verify | Key research questions | Status |
 |---|---|---|---|
-| Kenya | Data Protection Act 2019; Children Act 2022; ODPC regulations and children's-data guidance; Copyright Act | Child-data consent and age assurance; belief/sensitive data; guardian authority; institutional care; transfers; breach duties; translation and media rights | Research baseline exists; full assessment and counsel review required |
+| Kenya | Data Protection Act 2019; Children Act 2022; ODPC 2025 Children's Data Guidance; General and Registration Regulations; Copyright Act and amendments | Child-data consent and age assurance; sensitive belief data; guardian authority and alternative care; DPIA; ODPC registration; transfers; breach duties; translation and media rights | **Research in progress.** Preliminary assessment created; current-law validation, counsel review and implementation evidence outstanding. See KENYA_JURISDICTION_LEGAL_REQUIREMENTS_ASSESSMENT.md |
 | Uganda | Data Protection and Privacy Act 2019 and regulations; Children Act; copyright legislation; regulator guidance | Child-data rules; lawful bases; guardian definitions; online safeguarding; transfers; licensing | Not assessed |
 | Tanzania | Personal Data Protection Act 2022 and regulations; Law of the Child Act; copyright legislation; regulator guidance | Child-data and consent requirements; local registration/transfer issues; guardian and institutional authority; copyright | Not assessed |
 | Rwanda | Law relating to protection of personal data and privacy; child protection legislation; copyright law; regulator guidance | Child-data processing; age/consent rules; transfer requirements; institutional care; content licensing | Not assessed |
@@ -50,7 +50,11 @@ Each completed profile must record:
 
 This table is deliberately a research queue. It does not state that the listed laws are exhaustive, current in every respect, or applicable to every product activity. Verify official consolidated legislation and commencement status before relying on any entry.
 
-## 4. Regional sequencing proposal
+## 4. Kenya detailed assessment
+
+A preliminary desk assessment is recorded in [KENYA_JURISDICTION_LEGAL_REQUIREMENTS_ASSESSMENT.md](KENYA_JURISDICTION_LEGAL_REQUIREMENTS_ASSESSMENT.md). It is not counsel-reviewed and does not approve Kenya for launch. Key unresolved items include current consolidated copyright legislation, operator/controller classification, ODPC registration, child-data DPIA, consent/authority evidence, cross-border transfers, safeguarding operations and item-level content licences.
+
+## 5. Regional sequencing proposal
 
 A possible research sequence, subject to owner approval and market strategy:
 
@@ -62,7 +66,7 @@ A possible research sequence, subject to owner approval and market strategy:
 
 Sequence is a planning suggestion, not an assumption about commercial priority or legal similarity.
 
-## 5. Research quality rules
+## 6. Research quality rules
 
 - Prefer official legislation portals, regulators and court/authority publications.
 - Record exact section/article and version, not just a homepage.
@@ -73,7 +77,7 @@ Sequence is a planning suggestion, not an assumption about commercial priority o
 - Recheck sources before implementation and again before launch.
 - Keep a change history and identify impacted requirements, tests, data flows and markets.
 
-## 6. Jurisdiction profile status
+## 7. Jurisdiction profile status
 
 Use only:
 - Not assessed.
@@ -87,7 +91,7 @@ Use only:
 
 A status change must include reviewer, date, evidence and scope. "Approved for launch" applies only to the reviewed service, features, data uses, territories and operational setup.
 
-## 7. Immediate next research tasks
+## 8. Immediate next research tasks
 
 - Confirm the first intended launch markets and whether access is global or geographically restricted during pilot.
 - Complete a Kenya profile with current official sources and local counsel review.
