@@ -35,3 +35,12 @@ Proceed through Spiritual Growth, Biblical World Explorer, Wisdom & Life Applica
 
 ## Change control
 Every milestone needs scope, affected modules, dependency check, migration plan, acceptance tests, rollback plan, defect-register updates and owner approval. Keep main protected from unreviewed implementation changes.
+
+## Phase 00C owner decisions and care pathway refinement
+- Owner supports Google Cloud Run as the leading hosting candidate, subject to comparison and approval; managed PostgreSQL is the leading database candidate, subject to provider evaluation.
+- Owner supports one parent/guardian account managing multiple learner profiles with separate learner-level privacy boundaries.
+- Added a proposed progressive-autonomy model for ages 14–17 and adult control from 18, subject to applicable law and verified authority.
+- Added the Care & Access Pathway covering legally authorized guardians, kinship/foster care, institutional care and children without verified caregivers.
+- Explicitly separates legal authority, account autonomy and spiritual development. Spiritual maturity is not an authorization attribute.
+- Added safeguards for non-Christian/non-religious households: transparent Christian purpose, no inferred belief, no discriminatory denial and purpose-limited handling of religious reflections.
+- Detailed design: LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY.md. Legal and safeguarding review remains mandatory before implementation.
