@@ -1,21 +1,31 @@
 # Current Architecture
 
 ## Status
-Initial static architecture map from repository inventory and selected source review. Unknowns are marked; this is not a complete runtime/deployment diagram.
+Static architecture map from the complete recursive Git tree (75 tracked files; tree response not truncated) and selected source review. Runtime/deployment topology remains unverified.
 
-## Observed stack
-- Next.js 15 App Router, React 19 and TypeScript.
-- Tailwind CSS 4 and Motion for presentation/interaction.
-- D3 and Recharts for visual analytics.
-- Google GenAI SDK dependency; end-to-end companion behavior not verified.
-- Bun lockfile, next.config.ts and .env.example.
-- No first-party database schema, migration set, authentication provider or server API contract was identified in the inspected inventory. External services remain unverified.
+## Observed stack and configuration
+- Next.js 15 App Router, React 19, TypeScript 5.9; Tailwind CSS 4 and Motion.
+- D3 and Recharts for visualizations.
+- `@google/genai` is a package dependency; active source call sites were not found in reviewed code/search. Search index was incomplete; classify as unverified.
+- `package.json` has dev/build/start/lint/clean scripts but no test script.
+- `next.config.ts` ignores ESLint during builds and does not ignore TypeScript errors.
+- `eslint-config-next` 16.0.8 with Next.js 15.4.9 requires compatibility verification.
+- `.env.example` documents GEMINI_API_KEY and APP_URL with AI Studio/Cloud Run injection notes. Actual hosting and secret injection are not verified.
 
-## Observed experience domains
-Landing/home and onboarding; Bedtime Shepherd and Morning Bridge; Ancient Archive Explorer and historical timeline; Teen Safe Harbor and private journaling interfaces; parent portal/architecture presentation; Bible reader and study studio; growth tracker, milestones and engagement visualizations.
+## Repository structure evidence
+Tracked tree contains 75 files, including routes for home, tiers, growth tracker, Bible reader/studio, ancient archive, safe harbor, parent portal, semantic search and timeline. No `app/api` routes, database schema/migrations, tests, CI workflows, service worker or root README were identified in this complete tree. This does not rule out external services.
 
-## State ownership concerns
-Inspected growth pages initialize growth points independently and maintain engagement logs in page-level React state. Different routes use different initial values. No central durable learner record was identified in reviewed code. Onboarding appears to generate a profile payload for display rather than submit it to a verified account service; social sign-in handoff is simulated.
+## Experience domains
+Landing/home and onboarding; Bedtime Shepherd and Morning Bridge; Ancient Archive Explorer and historical timeline; Teen Safe Harbor and private journaling; parent portal/architecture presentation; Bible reader and study studio; semantic search; prayer; growth tracker, milestones and engagement visualizations.
+
+## Current data and trust boundaries
+- Onboarding UI validates form fields and advances through timed client-side transitions. The profile/routing payload is computed client-side; real account creation and persistence were not observed in the reviewed flow.
+- Admin UI uses client state and a known demo passcode; it is not an authentication boundary.
+- Teen journal content and entries are held in React state, including seeded example content. Inspected mock ciphertext is not encryption.
+- Growth points/logs are held separately in multiple route-level React states, with inconsistent initial values.
+- Bible reading progress and prayer petitions use localStorage. These are browser-local persistence, not a central account-owned learner record.
+- Network indicator writes a localStorage marker and has a simulated offline toggle; actual offline caching is unverified.
+- Bible reader fetches KJV chapters from bible-api.com for non-curated chapters; translation rights/provenance and API availability need validation.
 
 ## Target logical architecture
 1. Identity and account ownership.
