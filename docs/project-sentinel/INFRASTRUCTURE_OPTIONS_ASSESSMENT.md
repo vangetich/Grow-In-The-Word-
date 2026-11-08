@@ -40,3 +40,7 @@ Reproducible dependency install and lockfile; lint/type-check/build; container o
 
 ## 9. Decision gate
 Select a provider only after runtime assurance, requirements discovery, legal/data residency review, comparative evidence, cost model and owner approval. Do not provision production resources in Phase 00C.
+
+## Owner-supported evaluation direction
+
+The owner supports evaluating Google Cloud Run as the leading hosting candidate while comparing alternatives, and managed PostgreSQL as the leading transactional database candidate. A Cloud Run plus managed PostgreSQL pairing (including Cloud SQL for PostgreSQL as one candidate) should be evaluated first for integration fit, region/data residency, network connectivity, connection pooling, backups/PITR, high availability, cost and operational burden. Compare at least one alternative hosting approach and other managed PostgreSQL options; retain a document-database comparison only against concrete access patterns. No production provider is selected by this direction.
