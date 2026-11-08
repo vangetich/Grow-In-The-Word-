@@ -1,15 +1,17 @@
 # Data Schema and Persistence Audit
 
-## Current evidence
-- Growth tracker initializes growthPoints to 45 and keeps engagementLog in page-level React state.
-- Bible reader initializes growthPoints to 70.
-- Timeline initializes growthPoints to 40 and similarly keeps local logs.
-- Some home-page localStorage use appears limited to celebration/milestone UI state.
-- No central learner schema, migration set or shared persistence service was identified in reviewed inventory.
-- Onboarding profileBackendPayload is generated/displayed as JSON; verified backend submission was not observed.
+## Current evidence (static review)
+- Growth tracker initializes growthPoints to 45 and keeps engagementLog in route-level React state (app/growth-tracker/page.tsx L14-L38).
+- Bible reader initializes growthPoints to 70 (app/bible-reader/page.tsx L14-L35); timeline initializes 40 (app/timeline/page.tsx L14-L30). Other routes also use distinct demo starting values.
+- Bible reader progress/preferences persist in localStorage (components/FullPageBibleReader.tsx L162-L287).
+- Prayer petitions persist in localStorage (components/DailyPrayerModal.tsx L105-L165).
+- These browser-local records are not a central authenticated account record or verified cross-device sync.
+- Teen journal data is held in React state and seeded with demonstration content; inspected mock cipher generation does not encrypt the content (components/PrivateJournalingVault.tsx L70-L145; components/TeenSafeHarborPhase4.tsx L175-L215, L315-L350).
+- No central learner schema, migration set or shared persistence service was identified in the complete tracked repository tree.
+- Onboarding profile payload is computed client-side; a verified backend submission was not observed (JourneyOnboardingModal.tsx L125-L220).
 
 ## Risks
-Conflicting values across routes; loss on refresh/device change; unclear record ownership; analytics mistaken for source-of-truth; unknown deletion/export/retention; no verified offline or concurrent-write reconciliation.
+Conflicting growth values across routes; loss on refresh/device change; unclear record ownership; analytics mistaken for source-of-truth; private text stored in memory as though encrypted; unknown deletion/export/retention; no verified offline or concurrent-write reconciliation.
 
 ## Proposed Central Growth Record entities
 - LearnerProfile: stable learner identity, preferences, developmental defaults and account linkage.
