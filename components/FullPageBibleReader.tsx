@@ -37,6 +37,8 @@ import {
   Trash2,
   Link2,
   Share2,
+  Feather,
+  Download,
 } from 'lucide-react';
 import VerseQuoteCardModal from '@/components/VerseQuoteCardModal';
 import {
@@ -390,8 +392,28 @@ export default function FullPageBibleReader({
   const [noteDraftText, setNoteDraftText] = useState<string>('');
   const [noteDraftType, setNoteDraftType] = useState<'reflection' | 'question' | 'prayer'>('reflection');
 
+  // 'My Saved Verses & Notes' Dashboard Modal State
+  const [isSavedVersesDashboardOpen, setIsSavedVersesDashboardOpen] = useState<boolean>(false);
+  const [dashboardSearchQuery, setDashboardSearchQuery] = useState<string>('');
+  const [dashboardFilterTab, setDashboardFilterTab] = useState<'all' | 'notes-only' | HighlightColor>('all');
+  const [dashboardEditingVerseId, setDashboardEditingVerseId] = useState<string | null>(null);
+  const [dashboardEditNoteText, setDashboardEditNoteText] = useState<string>('');
+
   // Quote Card Share State
   const [sharingVerse, setSharingVerse] = useState<HighlightedVerse | null>(null);
+
+  // Active Verse Note Popover State
+  const [activeVerseNotePopup, setActiveVerseNotePopup] = useState<{
+    highlightId: string;
+    verseNumber: number;
+    bookName: string;
+    chapter: number;
+    verseText: string;
+    currentNote: string;
+    currentNoteType: 'reflection' | 'question' | 'prayer';
+  } | null>(null);
+  const [popupNoteText, setPopupNoteText] = useState<string>('');
+  const [popupNoteType, setPopupNoteType] = useState<'reflection' | 'question' | 'prayer'>('reflection');
 
   // Reading Duration Goals State (Daily & Weekly)
   const [durationCadence, setDurationCadence] = useState<'daily' | 'weekly'>('daily');
@@ -969,6 +991,29 @@ export default function FullPageBibleReader({
       })
       .catch(() => {});
   }, [savedHighlights]);
+
+  const handleExportBackup = useCallback(() => {
+    if (savedHighlights.length === 0 || typeof window === 'undefined') return;
+    const backupData = {
+      exportedAt: new Date().toISOString(),
+      appName: 'Grow In The Word',
+      totalSavedItems: savedHighlights.length,
+      highlights: savedHighlights,
+    };
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(backupData, null, 2)
+    )}`;
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', jsonString);
+    downloadAnchor.setAttribute(
+      'download',
+      `grow_in_the_word_reflections_backup_${new Date().toISOString().slice(0, 10)}.json`
+    );
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    onEngageContent?.(10, 'Exported downloadable JSON backup of spiritual reflections');
+  }, [savedHighlights, onEngageContent]);
 
   const handleJumpToHighlight = useCallback(
     (h: HighlightedVerse) => {
@@ -2054,6 +2099,23 @@ export default function FullPageBibleReader({
               )}
             </button>
 
+            {/* SAVED VERSES & NOTES DASHBOARD MODAL TRIGGER BUTTON */}
+            <button
+              type="button"
+              onClick={() => setIsSavedVersesDashboardOpen(true)}
+              aria-label="Open My Saved Verses & Notes Dashboard"
+              className={`min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer border-[#D97706]/50 bg-[#D97706]/10 hover:bg-[#D97706]/20 text-[#92400E] dark:text-[#FBBF24]`}
+              title="Open My Saved Verses & Notes Dashboard Modal"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+              <span>Saved Verses &amp; Notes</span>
+              {savedHighlights.filter((h) => h.note && h.note.trim()).length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#D97706] text-[#1A1A1A]">
+                  {savedHighlights.filter((h) => h.note && h.note.trim()).length}
+                </span>
+              )}
+            </button>
+
             {/* QUICK HIGHLIGHT MODE TOGGLE */}
             <div className="hidden sm:inline-flex items-center rounded-xl border p-0.5 gap-1 border-[#E5DEC9] dark:border-[#36312E] bg-current/5">
               <button
@@ -3063,6 +3125,18 @@ export default function FullPageBibleReader({
                           onClick={() => {
                             if (isHighlightModeActive) {
                               handleToggleHighlightVerse(v.verse);
+                            } else if (highlight) {
+                              setActiveVerseNotePopup({
+                                highlightId: highlight.id,
+                                verseNumber: v.verse,
+                                bookName: currentChapter.book,
+                                chapter: currentChapter.chapter,
+                                verseText: v.text[activeVersion],
+                                currentNote: highlight.note || '',
+                                currentNoteType: highlight.noteType || 'reflection',
+                              });
+                              setPopupNoteText(highlight.note || '');
+                              setPopupNoteType(highlight.noteType || 'reflection');
                             } else {
                               setSelectedVerseNumber(v.verse);
                               setShowAllVersionsInspector(true);
@@ -3075,6 +3149,18 @@ export default function FullPageBibleReader({
                               e.preventDefault();
                               if (isHighlightModeActive) {
                                 handleToggleHighlightVerse(v.verse);
+                              } else if (highlight) {
+                                setActiveVerseNotePopup({
+                                  highlightId: highlight.id,
+                                  verseNumber: v.verse,
+                                  bookName: currentChapter.book,
+                                  chapter: currentChapter.chapter,
+                                  verseText: v.text[activeVersion],
+                                  currentNote: highlight.note || '',
+                                  currentNoteType: highlight.noteType || 'reflection',
+                                });
+                                setPopupNoteText(highlight.note || '');
+                                setPopupNoteType(highlight.noteType || 'reflection');
                               } else {
                                 setSelectedVerseNumber(v.verse);
                                 setShowAllVersionsInspector(true);
@@ -4051,6 +4137,413 @@ export default function FullPageBibleReader({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* SMALL NON-OBTRUSIVE VERSE NOTE POPOVER MODAL */}
+      <AnimatePresence>
+        {activeVerseNotePopup && (
+          <motion.div
+            role="dialog"
+            aria-label="Verse Personal Note Editor"
+            initial={{opacity: 0, y: 10, scale: 0.98}}
+            animate={{opacity: 1, y: 0, scale: 1}}
+            exit={{opacity: 0, y: 8, scale: 0.98}}
+            transition={{duration: 0.16}}
+            className="fixed bottom-6 right-6 z-50 w-[min(380px,calc(100vw-2rem))] p-5 rounded-3xl bg-[#FAF7F2] dark:bg-[#1C1917] text-[#1C1917] dark:text-[#FAF7F2] border border-[#D97706] shadow-2xl backdrop-blur-xl space-y-4 text-left font-sans"
+          >
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-current/10">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-xl bg-[#D97706]/20 text-[#D97706] flex items-center justify-center shrink-0">
+                  <Feather className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-[#92400E] dark:text-[#FBBF24]">
+                    Verse Note Sanctuary
+                  </div>
+                  <h4 className="text-xs font-bold truncate">
+                    {activeVerseNotePopup.bookName} {activeVerseNotePopup.chapter}:{activeVerseNotePopup.verseNumber}
+                  </h4>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveVerseNotePopup(null)}
+                className="w-6 h-6 rounded-full bg-current/10 hover:bg-current/20 flex items-center justify-center cursor-pointer"
+                aria-label="Close note popover"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Verse Snippet Preview */}
+            <div className="p-3 rounded-2xl bg-current/5 border border-current/10 text-xs italic opacity-85 leading-relaxed">
+              “{activeVerseNotePopup.verseText}”
+            </div>
+
+            {/* Note Type Selector */}
+            <div className="flex items-center gap-1.5">
+              {(
+                [
+                  {id: 'reflection', label: 'Reflection', icon: '💭'},
+                  {id: 'question', label: 'Question', icon: '❓'},
+                  {id: 'prayer', label: 'Prayer', icon: '🙏'},
+                ] as const
+              ).map((nt) => (
+                <button
+                  key={nt.id}
+                  type="button"
+                  onClick={() => setPopupNoteType(nt.id)}
+                  className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-mono font-semibold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                    popupNoteType === nt.id
+                      ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917] shadow-xs'
+                      : 'bg-current/5 hover:bg-current/10 opacity-75 hover:opacity-100'
+                  }`}
+                >
+                  <span>{nt.icon}</span>
+                  <span>{nt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Note Textarea */}
+            <div className="space-y-1">
+              <textarea
+                value={popupNoteText}
+                onChange={(e) => setPopupNoteText(e.target.value)}
+                placeholder="Write your personal reflection, question, or prayer here..."
+                rows={3}
+                className="w-full p-3 rounded-2xl bg-current/5 border border-current/15 text-xs focus:outline-none focus:ring-2 focus:ring-[#D97706] resize-none"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {activeVerseNotePopup.currentNote ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSaveHighlightNote(activeVerseNotePopup.highlightId, '', 'reflection');
+                    setActiveVerseNotePopup(null);
+                  }}
+                  className="px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold hover:bg-rose-500/10 transition-colors cursor-pointer"
+                >
+                  Delete Note
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveVerseNotePopup(null)}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold opacity-75 hover:opacity-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSaveHighlightNote(
+                      activeVerseNotePopup.highlightId,
+                      popupNoteText,
+                      popupNoteType
+                    );
+                    setActiveVerseNotePopup(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#D97706] hover:bg-[#F59E0B] text-[#1A1A1A] font-bold text-xs shadow-md transition-all cursor-pointer"
+                >
+                  Save Note
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 'MY SAVED VERSES & NOTES' DASHBOARD MODAL */}
+      <AnimatePresence>
+        {isSavedVersesDashboardOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="My Saved Verses and Notes Dashboard"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          >
+            <motion.div
+              initial={{scale: 0.95, opacity: 0, y: 15}}
+              animate={{scale: 1, opacity: 1, y: 0}}
+              exit={{scale: 0.95, opacity: 0, y: 15}}
+              className="w-full max-w-4xl max-h-[85vh] bg-[#FAF7F2] dark:bg-[#1C1917] text-[#1C1917] dark:text-[#FAF7F2] border border-[#E5DEC9] dark:border-[#36312E] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="p-5 sm:p-6 bg-[#F2ECE1] dark:bg-[#292524] border-b border-[#E5DEC9] dark:border-[#36312E] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#D97706] font-semibold">
+                    <FileText className="w-4 h-4" />
+                    <span>Centralized Study Vault</span>
+                  </div>
+                  <h3
+                    className="text-xl sm:text-2xl font-bold"
+                    style={{fontFamily: 'var(--font-display), serif'}}
+                  >
+                    My Saved Verses &amp; Notes ({savedHighlights.length})
+                  </h3>
+                  <p className="text-xs opacity-75">
+                    View, edit personal reflections, and manage all your highlighted scripture across books and chapters.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportBackup}
+                    disabled={savedHighlights.length === 0}
+                    className="px-3.5 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-[#1A1A1A] font-bold text-xs shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Export all saved verses and personal notes to a JSON backup file"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Backup My Data (.json)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsSavedVersesDashboardOpen(false)}
+                    aria-label="Close modal"
+                    className="p-2 rounded-xl bg-current/5 hover:bg-current/15 transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Toolbar & Search Bar */}
+              <div className="p-4 sm:p-5 bg-current/5 border-b border-current/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 opacity-50 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={dashboardSearchQuery}
+                    onChange={(e) => setDashboardSearchQuery(e.target.value)}
+                    placeholder="Search saved verses, notes, books, or keywords..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-current/5 border border-current/15 text-xs focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                  />
+                </div>
+
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-xs">
+                  {[
+                    {id: 'all', label: `All (${savedHighlights.length})`},
+                    {id: 'notes-only', label: `With Notes (${savedHighlights.filter((h) => h.note && h.note.trim()).length})`},
+                    {id: 'amber', label: 'Amber'},
+                    {id: 'sage', label: 'Sage'},
+                    {id: 'rose', label: 'Rose'},
+                    {id: 'sky', label: 'Sky'},
+                  ].map((tab) => {
+                    const isActive = dashboardFilterTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setDashboardFilterTab(tab.id as any)}
+                        className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                          isActive
+                            ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917]'
+                            : 'bg-current/5 hover:bg-current/10 opacity-75 hover:opacity-100'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Scrollable Content List */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+                {(() => {
+                  const filtered = savedHighlights.filter((h) => {
+                    if (dashboardFilterTab === 'notes-only' && (!h.note || !h.note.trim())) return false;
+                    if (dashboardFilterTab !== 'all' && dashboardFilterTab !== 'notes-only' && h.color !== dashboardFilterTab) return false;
+                    if (dashboardSearchQuery.trim()) {
+                      const q = dashboardSearchQuery.trim().toLowerCase();
+                      const matchRef = h.bookName.toLowerCase().includes(q) || `${h.chapter}:${h.verse}`.includes(q);
+                      const matchText = h.text.toLowerCase().includes(q);
+                      const matchNote = h.note && h.note.toLowerCase().includes(q);
+                      if (!matchRef && !matchText && !matchNote) return false;
+                    }
+                    return true;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-16 text-center space-y-3">
+                        <FileText className="w-12 h-12 text-[#D97706]/40 mx-auto" />
+                        <h4 className="text-base font-bold">No saved verses or notes found</h4>
+                        <p className="text-xs opacity-75 max-w-md mx-auto">
+                          {savedHighlights.length === 0
+                            ? 'Start highlighting verses or adding personal reflections while reading chapters in the Full-Page Bible Reader.'
+                            : 'No saved items match your current filter or search query.'}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filtered.map((item) => {
+                        const colorMeta = HIGHLIGHT_COLORS[item.color];
+                        const isEditing = dashboardEditingVerseId === item.id;
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 rounded-2xl border bg-current/5 border-current/15 flex flex-col justify-between space-y-3 transition-all ${colorMeta.borderCol}/40`}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold ${colorMeta.badgeBg}`}>
+                                  <span className="w-2 h-2 rounded-full" style={{backgroundColor: colorMeta.dotColor}} />
+                                  <span>{item.bookName} {item.chapter}:{item.verse} ({item.version})</span>
+                                </span>
+
+                                <span className="text-[10px] opacity-60 font-mono">
+                                  {new Date(item.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+
+                              <p
+                                className="text-sm italic font-normal leading-relaxed opacity-90"
+                                style={{fontFamily: 'var(--font-display), serif'}}
+                              >
+                                &ldquo;{item.text}&rdquo;
+                              </p>
+
+                              {/* Note Area */}
+                              {isEditing ? (
+                                <div className="space-y-2 pt-2 border-t border-current/10">
+                                  <textarea
+                                    value={dashboardEditNoteText}
+                                    onChange={(e) => setDashboardEditNoteText(e.target.value)}
+                                    placeholder="Edit your personal reflection or prayer..."
+                                    rows={2}
+                                    className="w-full p-2.5 rounded-xl bg-current/5 border border-current/20 text-xs focus:outline-none focus:ring-1 focus:ring-[#D97706] resize-none"
+                                  />
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setDashboardEditingVerseId(null)}
+                                      className="px-2.5 py-1 rounded-lg text-[11px] opacity-75 hover:opacity-100 cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleSaveHighlightNote(item.id, dashboardEditNoteText, item.noteType || 'reflection');
+                                        setDashboardEditingVerseId(null);
+                                      }}
+                                      className="px-3 py-1 rounded-lg bg-[#D97706] text-[#1A1A1A] font-bold text-[11px] cursor-pointer"
+                                    >
+                                      Save Note
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : item.note ? (
+                                <div className="p-3 rounded-xl bg-current/5 border border-current/10 space-y-1">
+                                  <div className="flex items-center justify-between text-[11px] font-semibold text-[#D97706]">
+                                    <span className="capitalize">Personal {item.noteType || 'Reflection'}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDashboardEditingVerseId(item.id);
+                                        setDashboardEditNoteText(item.note || '');
+                                      }}
+                                      className="text-xs opacity-75 hover:opacity-100 underline cursor-pointer"
+                                    >
+                                      Edit Note
+                                    </button>
+                                  </div>
+                                  <p className="text-xs opacity-90 leading-relaxed">{item.note}</p>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDashboardEditingVerseId(item.id);
+                                    setDashboardEditNoteText('');
+                                  }}
+                                  className="text-xs text-[#D97706] hover:underline inline-flex items-center gap-1 cursor-pointer pt-1"
+                                >
+                                  <Feather className="w-3.5 h-3.5" />
+                                  <span>+ Add personal reflection note</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Card Footer Actions */}
+                            <div className="flex items-center justify-between pt-2 border-t border-current/10 text-xs">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBookId(item.bookId);
+                                  setSelectedChapterNumber(item.chapter);
+                                  setSelectedVerseNumber(item.verse);
+                                  setIsSavedVersesDashboardOpen(false);
+                                  onEngageContent?.(5, `Jumped to saved verse ${item.bookName} ${item.chapter}:${item.verse}`);
+                                }}
+                                className="inline-flex items-center gap-1 font-semibold text-[#D97706] hover:underline cursor-pointer"
+                              >
+                                <BookOpen className="w-3.5 h-3.5" />
+                                <span>Jump to Context</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveHighlight(item.id)}
+                                className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 opacity-75 hover:opacity-100 cursor-pointer"
+                                title="Delete saved highlight"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 bg-[#F2ECE1] dark:bg-[#292524] border-t border-[#E5DEC9] dark:border-[#36312E] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <span className="opacity-70 font-mono">
+                  All items saved privately in browser <code className="text-[#D97706]">localStorage</code>
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportBackup}
+                    disabled={savedHighlights.length === 0}
+                    className="px-3.5 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-[#1A1A1A] font-bold text-xs shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Export all saved verses and personal notes to a JSON backup file"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Backup My Data (.json)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsSavedVersesDashboardOpen(false)}
+                    className="px-5 py-2 rounded-xl bg-[#1C1917] dark:bg-[#FAF7F2] text-[#FAF7F2] dark:text-[#1C1917] font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

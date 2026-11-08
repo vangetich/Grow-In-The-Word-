@@ -37,6 +37,7 @@ import FullPageBibleReader, {
 } from './FullPageBibleReader';
 import WeeklyReadingVelocityChart from './WeeklyReadingVelocityChart';
 import MonthlyReadingHeatmapChart from './MonthlyReadingHeatmapChart';
+import ReadingGoalTrackerCard from './ReadingGoalTrackerCard';
 import {
   BIBLE_CANON_BOOKS,
   TOTAL_BIBLE_CHAPTERS,
@@ -230,6 +231,107 @@ const BIBLE_VERSIONS: BibleVersionMeta[] = [
     yearNote: 'Accessible Narrative Edition',
   },
 ];
+
+const SCRIPTURE_INSIGHT_PROMPTS: Record<
+  string,
+  Record<
+    '3-7' | '8-12' | '13-18',
+    {title: string; prompt: string; wonderQuestion: string}
+  >
+> = {
+  default: {
+    '3-7': {
+      title: 'Little Shepherd Wonder',
+      prompt:
+        'God wraps you in His gentle care just like a shepherd holding a tiny lamb in the meadow.',
+      wonderQuestion:
+        'How does knowing God is always watching over you make your heart feel right now?',
+    },
+    '8-12': {
+      title: 'Junior Explorer Discovery',
+      prompt:
+        'This passage shows us the unchanging reliability of God’s covenant word across ancient history.',
+      wonderQuestion:
+        'How can you practice this truth in your friendships and family this week?',
+    },
+    '13-18': {
+      title: 'Dedicated Formation Studio',
+      prompt:
+        'Ancient covenant wisdom invites us to anchor our identity in transcendent truth rather than shifting cultural winds.',
+      wonderQuestion:
+        'What personal trial or decision in your life right now is being reshaped by this verse?',
+    },
+  },
+  'psalm-23': {
+    '3-7': {
+      title: 'Safe in His Arms',
+      prompt:
+        'Even when dark shadows or scary moments happen, God is right beside you with His comforting staff.',
+      wonderQuestion:
+        'Where is your favorite peaceful place where you can talk quietly to God?',
+    },
+    '8-12': {
+      title: 'The Divine Host & Protector',
+      prompt:
+        'David pictures God not only as a wilderness shepherd but as a generous host who sets a feast in the presence of difficulty.',
+      wonderQuestion:
+        'When has God provided unexpected calm or encouragement for you during a stressful day?',
+    },
+    '13-18': {
+      title: 'Unshakable Sanctuary',
+      prompt:
+        '“I shall not want” is not a promise of material luxury, but the profound existential security of belonging wholly to the Sovereign Creator.',
+      wonderQuestion:
+        'How does acknowledging God as ultimate shepherd free you from the exhausting race for social approval?',
+    },
+  },
+  'john-1': {
+    '3-7': {
+      title: 'The True Light',
+      prompt:
+        'Jesus is the bright morning light that shines into every dark room and brings joyful life.',
+      wonderQuestion:
+        'What is something beautiful God made that makes you smile today?',
+    },
+    '8-12': {
+      title: 'The Eternal Logos',
+      prompt:
+        'John uses the Greek philosophical concept of the “Logos” (divine reason and creative word) to show that Jesus was present at the very dawn of the universe.',
+      wonderQuestion:
+        'Why does it matter that the Creator of galaxies entered human history as a fragile baby?',
+    },
+    '13-18': {
+      title: 'Cosmic Order & Incarnation',
+      prompt:
+        'The Word became flesh—truth took on bone and breath. Christianity is anchored in historical reality, not gnostic abstraction.',
+      wonderQuestion:
+        'In what ways does the Incarnation challenge how you view physical embodiment and earthly responsibility?',
+    },
+  },
+  'romans-8': {
+    '3-7': {
+      title: 'Always Loved',
+      prompt:
+        'Nothing in the whole wide world can ever separate you from God’s enormous, endless love.',
+      wonderQuestion:
+        'Can you name three things or people you are most grateful for today?',
+    },
+    '8-12': {
+      title: 'More Than Conquerors',
+      prompt:
+        'Paul assures believers that even when hardships arise, God works all things together for ultimate good and unbreakable victory.',
+      wonderQuestion:
+        'What is a hard challenge you are facing, and how can prayer change your outlook on it?',
+    },
+    '13-18': {
+      title: 'Impenetrable Sonship & Grace',
+      prompt:
+        'Romans 8 dismantles performance-based religion. If God did not spare His own Son, how will He not also graciously give us all things?',
+      wonderQuestion:
+        'What underlying fear or anxiety about the future are you surrendering to this promise today?',
+    },
+  },
+};
 
 const DICTIONARY_ENTRIES: Record<string, DictionaryEntry> = {
   shepherd: {
@@ -1971,11 +2073,48 @@ export default function BibleStudyReadingStudio({
     'all' | 'Old Testament' | 'New Testament'
   >('all');
 
+  // Scripture Insight & Age Stage Reflection State (Persisted to localStorage)
+  const [insightAgeStage, setInsightAgeStage] = useState<'3-7' | '8-12' | '13-18'>(() => {
+    if (typeof window === 'undefined') return '8-12';
+    try {
+      const saved = window.localStorage.getItem('grow_in_the_word_insight_age_stage_v1');
+      if (saved === '3-7' || saved === '8-12' || saved === '13-18') return saved;
+    } catch {}
+    return '8-12';
+  });
+
+  const [verseReflections, setVerseReflections] = useState<Record<string, string>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = window.localStorage.getItem('grow_in_the_word_verse_reflections_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  const handleSaveInsightAgeStage = (stage: '3-7' | '8-12' | '13-18') => {
+    setInsightAgeStage(stage);
+    try {
+      window.localStorage.setItem('grow_in_the_word_insight_age_stage_v1', stage);
+    } catch {}
+    onEngageContent?.(5, `Selected Scripture Insight Age Stage: ${stage === '3-7' ? 'Ages 3-7 (Sanctuary)' : stage === '8-12' ? 'Ages 8-12 (Ancient Archive)' : 'Ages 13-18 (Safe Harbor)'}`);
+  };
+
+  const currentReflectionKey = `${selectedPassageId}-v${highlightedVerse}`;
+
+  const handleSaveCurrentReflection = () => {
+    try {
+      window.localStorage.setItem('grow_in_the_word_verse_reflections_v1', JSON.stringify(verseReflections));
+    } catch {}
+    onEngageContent?.(10, `Saved personal reflection for ${selectedPassageId} Verse ${highlightedVerse}`);
+  };
+
   const concordanceSectionRef = useRef<HTMLDivElement | null>(null);
 
   // 1. Restore 'Last Read' Bookmark & 'Recent Reads' (last 5 passages) from localStorage on initial client mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
     const restoreTimer = setTimeout(() => {
       try {
         const raw = window.localStorage.getItem(LAST_READ_STORAGE_KEY);
@@ -2113,12 +2252,9 @@ export default function BibleStudyReadingStudio({
     return () => clearTimeout(restoreTimer);
   }, []);
 
-  const currentPassage = useMemo(
-    () =>
-      STUDY_PASSAGES.find((p) => p.id === selectedPassageId) ||
-      STUDY_PASSAGES[0],
-    [selectedPassageId]
-  );
+  const currentPassage =
+    STUDY_PASSAGES.find((p) => p.id === selectedPassageId) ||
+    STUDY_PASSAGES[0];
 
   // 2. Automatically save 'Last Read' Bookmark AND update 'Recent Reads' (last 5 passages) in localStorage
   useEffect(() => {
@@ -2983,6 +3119,15 @@ export default function BibleStudyReadingStudio({
           );
         })()}
 
+        {/* READING GOAL TRACKER CARD WITH VISUAL PROGRESS RING */}
+        <ReadingGoalTrackerCard
+          totalChaptersReadCanon={
+            Object.values(chaptersReadMap).filter(Boolean).length
+          }
+          activeBookName={currentPassage.book}
+          onLogGoalSession={onEngageContent}
+        />
+
         {/* WEEKLY READING VELOCITY GRAPH (7-Day Consistency via Recharts) */}
         <WeeklyReadingVelocityChart
           totalChaptersReadCanon={
@@ -3695,6 +3840,120 @@ export default function BibleStudyReadingStudio({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Scripture Insight & Age-Aligned Reflection Popover / Card */}
+          <div className="mx-4 sm:mx-6 mb-6 p-5 sm:p-6 rounded-2xl bg-[#F9F6F0] border-2 border-[#D97706]/50 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5DEC9]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#D97706]/15 flex items-center justify-center text-[#D97706]">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-base font-normal text-[#1A1A1A]" style={{fontFamily: 'var(--font-display), serif'}}>
+                    Scripture Insight · Verse {highlightedVerse} Reflection
+                  </h4>
+                  <p className="text-xs text-[#57534E]">
+                    Tailored for your spiritual growth journey &amp; age stage
+                  </p>
+                </div>
+              </div>
+
+              {/* Age Stage Selector Tabs */}
+              <div className="flex items-center gap-1 bg-[#F2ECE1] p-1 rounded-xl border border-[#E5DEC9]">
+                {[
+                  { id: '3-7', label: 'Ages 3–7 (Sanctuary)' },
+                  { id: '8-12', label: 'Ages 8–12 (Archive)' },
+                  { id: '13-18', label: 'Ages 13–18 (Harbor)' },
+                ].map((tab) => {
+                  const isActive = insightAgeStage === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleSaveInsightAgeStage(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#1A1A1A] text-[#F9F6F0] shadow-xs'
+                          : 'text-[#57534E] hover:text-[#1A1A1A] hover:bg-[#FAF7F2]'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Age-Aligned Prompt & Wonder Question Content */}
+            {(() => {
+              const passagePrompts = SCRIPTURE_INSIGHT_PROMPTS[selectedPassageId] || SCRIPTURE_INSIGHT_PROMPTS.default;
+              const currentPromptData = passagePrompts[insightAgeStage];
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-[#F2ECE1]/70 border border-[#E5DEC9] space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#92400E] font-semibold">
+                      <Compass className="w-3.5 h-3.5 text-[#D97706]" />
+                      <span>{currentPromptData.title}</span>
+                    </div>
+                    <p className="text-sm text-[#1A1A1A] leading-relaxed">
+                      &ldquo;{currentPromptData.prompt}&rdquo;
+                    </p>
+                    <div className="p-3 rounded-lg bg-[#FAF7F2] border border-[#E5DEC9]/70 text-xs text-[#44403C] space-y-1">
+                      <span className="font-semibold text-[#D97706] block">Wonder Question:</span>
+                      <p>{currentPromptData.wonderQuestion}</p>
+                    </div>
+                  </div>
+
+                  {/* Personal Reflection Input & LocalStorage Persistence */}
+                  <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E5DEC9] flex flex-col justify-between space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono uppercase tracking-wider text-[#57534E] flex items-center gap-1.5">
+                          <Feather className="w-3.5 h-3.5 text-[#D97706]" />
+                          <span>My Personal Reflection</span>
+                        </span>
+                        {verseReflections[currentReflectionKey] && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-800 text-[10px] font-semibold">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Saved</span>
+                          </span>
+                        )}
+                      </div>
+                      <textarea
+                        value={verseReflections[currentReflectionKey] || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setVerseReflections((prev) => {
+                            const updated = {...prev, [currentReflectionKey]: val};
+                            try {
+                              window.localStorage.setItem('grow_in_the_word_verse_reflections_v1', JSON.stringify(updated));
+                            } catch {}
+                            return updated;
+                          });
+                        }}
+                        placeholder="Write your personal thoughts, prayer, or question about this verse..."
+                        rows={3}
+                        className="w-full p-3 rounded-xl bg-[#F9F6F0] border border-[#E5DEC9] focus:border-[#D97706] focus:outline-none text-xs text-[#1A1A1A] placeholder:text-[#78716C] resize-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-[#57534E]">
+                        Persisted privately in <code className="font-mono">localStorage</code>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleSaveCurrentReflection}
+                        className="px-4 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-[#1A1A1A] text-xs font-semibold transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <BookmarkCheck className="w-3.5 h-3.5" />
+                        <span>Save Reflection</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

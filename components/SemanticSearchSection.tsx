@@ -19,6 +19,8 @@ import {
   History,
   Trash2,
   CornerDownLeft,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import StudyTooltip from './StudyTooltip';
 
@@ -474,7 +476,67 @@ export default function SemanticSearchSection({
     SEMANTIC_LIBRARY_ITEMS[0]
   );
   const [nourishedIds, setNourishedIds] = useState<string[]>([]);
+  const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Voice-to-Text Speech Recognition State & Handler
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const recognitionRef = useRef<any>(null);
+
+  const handleToggleVoiceSearch = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert(
+        'Voice-to-Text speech recognition is not supported by your browser. Please try Chrome, Edge, or Safari.'
+      );
+      return;
+    }
+
+    if (isListening && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0].transcript)
+          .join('');
+        setSearchQuery(transcript);
+        setActiveTrendingId(null);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      onEngageContent(5, 'Activated Voice-to-Text Speech Search');
+    } catch {
+      setIsListening(false);
+    }
+  }, [isListening, onEngageContent]);
 
   // Recent Searches state & sidebar view tab
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
@@ -672,7 +734,6 @@ export default function SemanticSearchSection({
   const [trendingCohortFilter, setTrendingCohortFilter] = useState<
     'all' | 'tweens' | 'teens'
   >('all');
-  const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
 
   const filteredTrendingQueries = useMemo(() => {
     if (trendingCohortFilter === 'all') return ANONYMIZED_TRENDING_QUERIES;
@@ -814,6 +875,39 @@ export default function SemanticSearchSection({
                 aria-label="Semantic search across scripture passages, historical context, and discussion prompts"
                 className="w-full bg-transparent text-sm sm:text-base text-[#1C1917] placeholder:text-[#57534E]/75 focus:outline-none min-w-0"
               />
+              {/* Voice-to-Text Microphone Button */}
+              <button
+                type="button"
+                onClick={handleToggleVoiceSearch}
+                aria-label={
+                  isListening
+                    ? 'Stop voice search listening'
+                    : 'Start voice search (speak your biblical question)'
+                }
+                className={`min-h-[44px] px-3 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                  isListening
+                    ? 'bg-rose-500 text-white animate-pulse ring-2 ring-rose-300 shadow-xs'
+                    : 'bg-[#FAF7F2] text-[#92400E] border border-[#E5DEC9] hover:border-[#D97706] hover:bg-[#F2ECE1]'
+                }`}
+                title={
+                  isListening
+                    ? 'Listening... Speak your biblical query now'
+                    : 'Voice-to-Text: Speak your biblical question'
+                }
+              >
+                {isListening ? (
+                  <>
+                    <MicOff className="w-4 h-4 text-white" />
+                    <span className="font-mono text-[11px]">Listening...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4 text-[#D97706]" />
+                    <span className="hidden md:inline text-[11px] font-mono">Voice Search</span>
+                  </>
+                )}
+              </button>
+
               {searchQuery ? (
                 <button
                   type="button"
@@ -836,6 +930,23 @@ export default function SemanticSearchSection({
               )}
             </div>
           </div>
+
+          {/* Active Voice Listening Banner Indicator */}
+          {isListening && (
+            <div className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <Mic className="w-4 h-4 text-rose-600 animate-bounce" />
+                <span>Listening for your voice... Speak your biblical question or passage.</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleVoiceSearch}
+                className="text-xs font-bold underline cursor-pointer hover:text-rose-900"
+              >
+                Stop Listening
+              </button>
+            </div>
+          )}
 
           {/* Filter Row: Category Tabs + Developmental Tier Filter + Quick Semantic Queries */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
