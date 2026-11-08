@@ -14,9 +14,10 @@ Decisions are proposed until explicitly approved, except where marked accepted.
 **Rationale:** Traceable review and safe separation from active application code.
 
 ## ADR-003 — Central Growth Record
-**Status:** Proposed  
+**Status:** Proposed; not approved for implementation yet  
 **Decision:** Establish a server-authorized central domain service for learner continuity.  
 **Rationale:** Prevent fragmented state and support analytics/adaptive experiences.
+**Gate:** Complete identity, persistence, authorization and data-migration evidence before physical schema design.
 
 ## ADR-004 — Separate private teen journal domain
 **Status:** Proposed  
@@ -37,3 +38,9 @@ Decisions are proposed until explicitly approved, except where marked accepted.
 **Status:** Proposed  
 **Decision:** Distinguish verified implementation, not identified and unverified findings.  
 **Rationale:** Avoid overstating static audit conclusions.
+
+## ADR-008 — Demo security UI is not a security control
+**Status:** Proposed  
+**Decision:** Treat current admin unlock, encryption shield, privacy firewall and offline status screens as demonstration/presentation until server-side or cryptographic behavior is proven.
+**Rationale:** UI labels and client state do not establish security, encryption or caching.
+**Evidence:** AdminBackendMaintenanceSection.tsx L254-L285; PrivateJournalingVault.tsx L98-L145; NetworkStatusIndicator.tsx L35-L70.
