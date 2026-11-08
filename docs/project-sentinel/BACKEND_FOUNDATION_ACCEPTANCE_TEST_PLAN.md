@@ -79,3 +79,19 @@ Define testable conditions for a future backend foundation. This plan does not e
 
 ## 9. Non-claims
 This is a plan only. It is not a test report, security certification, legal compliance opinion, production readiness approval or evidence that a backend currently exists.
+
+## Additional acceptance tests: care, autonomy and religious inclusion
+
+| ID | Test | Expected result |
+|---|---|---|
+| BE-050 | Parent account manages two learner profiles | Each learner's records and permissions remain isolated |
+| BE-051 | Relative claims guardian authority without verification | No guardian privilege granted |
+| BE-052 | Verified authority is revoked or expires | Scoped access is removed within the approved revocation SLA |
+| BE-053 | Institutional staff account requests an unassigned learner | Denied and audited |
+| BE-054 | Institutional representative accesses an assigned learner | Only explicitly authorized projections/actions are available |
+| BE-055 | Child has no verified caregiver and requests access | Public non-personalized content remains available; sensitive personal processing is not initiated |
+| BE-056 | Learner transitions into 14–17 experience | Personal login and scoped autonomy only where legally and policy-authorized; guardian access is transparent |
+| BE-057 | Learner reaches 18 | Adult-control transition occurs; former guardian access is revoked absent fresh lawful authorization |
+| BE-058 | Learner or household is non-Christian/non-religious | No discriminatory access denial or inferred religious label; product purpose is transparently disclosed |
+| BE-059 | Religious reflection enters analytics or AI context | Excluded unless separately justified, authorized and safeguarded |
+| BE-060 | Spiritual maturity value is supplied as authorization input | Rejected; it is not a legal-capacity or permission attribute |
