@@ -14,6 +14,10 @@ Single ongoing register. Add findings with evidence and severity; close only wit
 | PS-08 | AI companion and GenAI data boundaries unverified | High | Unverified | package.json L13; .env.example; inspect deployed service and source call sites |
 | PS-09 | Offline cache readiness is not substantiated | High | Open | NetworkStatusIndicator.tsx L35-L70, L143-L215; implement cache/service worker or revise claim |
 | PS-10 | Dependency compatibility concern: eslint-config-next 16.0.8 alongside next 15.4.9 | Medium | Open | package.json L13-L40; verify install/build and align versions if needed |
+| PS-11 | No completed jurisdiction-by-jurisdiction legal applicability assessment exists | Critical | Open | Phase 00D jurisdiction register is a starter queue only; obtain current official sources and qualified local counsel review before processing minors or enabling a market |
+| PS-12 | No verified content-rights inventory covers translation, commentary, media, API, offline and AI uses | Critical | Open | Existing PS-07 covers Bible provenance/licensing; expand item-level rights evidence and permitted-use matrix before distribution |
+| PS-13 | International child-safeguarding operational procedures and accountable roles are not evidenced | Critical | Open | Define reporting, triage, escalation, incident evidence and local mandatory-reporting procedures; validate with safeguarding specialists and local counsel |
+| PS-14 | End-to-end personal-data locations, subprocessors and international transfer map is unverified | High | Unverified | Identify actual auth, hosting, analytics, AI, storage, support and backup providers; assess territorial transfers and contracts before production data use |
 
 ## Lifecycle
 Open → Triaged → In Progress → Fixed (unverified) → Verified → Closed. Deferral requires rationale, risk acceptance authority, review date and compensating control.
