@@ -8,6 +8,13 @@ Create audit branch and foundational documents; verify findings against code; co
 - **Outstanding:** confirm deployment/provider configuration; inspect live AI Studio/Cloud Run setup if used; establish whether external auth/database/storage exists; verify translation rights; run install/build/lint/test in a controlled environment; verify browser behavior and accessibility.
 - **Exit:** reproducible runtime baseline, provider map, rights register and owner-reviewed risk disposition. Static review alone does not satisfy exit.
 
+## Phase 00C — Preliminary backend architecture design
+- **Created:** nine provider-neutral design documents covering architecture vision, domain boundaries, trust/data flows, database/storage requirements, identity/authorization/consent, API/service contracts, infrastructure evaluation, architecture decisions and acceptance tests.
+- **Status:** design package created on the audit branch; owner review and approval outstanding.
+- **Constraints:** no production provider selected; no physical database schema; no source-code changes; no deployment, privileged operations or real-data migration.
+- **Outstanding parallel gates:** runtime/build/browser assurance and Bible/content provenance remain open under Phase 00B.
+- **Exit:** owner reviews domain boundaries, privacy model, provider evaluation criteria, unresolved decisions and test plan; only then proceed to Phase 00D requirements/evaluation.
+
 ## Phase 01 — Identity, authorization and persistence
 Select/verify authentication and database providers. Define account/learner ownership, family relationship, consent and resource authorization. Establish migrations, audit logging, secrets management and test harness. Exit: validated identity and persistence contracts.
 
