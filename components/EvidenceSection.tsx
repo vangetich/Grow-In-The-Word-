@@ -198,9 +198,10 @@ export default function EvidenceSection({
 
   return (
     <section
-      id="evidence"
-      className="py-20 lg:py-28 border-b border-[#E5DEC9] bg-[#FAF7F2]"
+      id="testimonials"
+      className="relative py-20 lg:py-28 border-b border-[#E5DEC9] bg-[#FAF7F2]"
     >
+      <div id="evidence" className="absolute -top-24 pointer-events-none" aria-hidden="true" />
       <div className="max-w-[1280px] mx-auto px-6 space-y-12">
         {/* Section Editorial Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-8 border-b border-[#E5DEC9]">

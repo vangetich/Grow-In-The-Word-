@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useState, useMemo, useRef, useEffect} from 'react';
+import React, {useState, useMemo, useRef, useEffect, useCallback} from 'react';
 import {
   Search,
   BookOpen,
@@ -15,8 +15,19 @@ import {
   ScrollText,
   Feather,
   Flame,
+  Clock,
+  History,
+  Trash2,
+  CornerDownLeft,
 } from 'lucide-react';
 import StudyTooltip from './StudyTooltip';
+
+export interface RecentSearchItem {
+  id: string;
+  query: string;
+  timestamp: number;
+  matchCount: number;
+}
 
 export type SearchItemCategory = 'passage' | 'history' | 'prompt';
 export type SearchTierFilter = 'all' | 'bedtime' | 'archive' | 'harbor';
@@ -404,6 +415,41 @@ export const ANONYMIZED_TRENDING_QUERIES: TrendingQueryItem[] = [
   },
 ];
 
+const RECENT_SEARCHES_STORAGE_KEY = 'grow_in_the_word_recent_searches';
+
+const INITIAL_RECENT_SEARCHES: RecentSearchItem[] = [
+  {
+    id: 'recent-1',
+    query: 'Psalm 23 still waters',
+    timestamp: Date.now() - 1000 * 60 * 35,
+    matchCount: 2,
+  },
+  {
+    id: 'recent-2',
+    query: 'Dead Sea Scrolls',
+    timestamp: Date.now() - 1000 * 60 * 180,
+    matchCount: 3,
+  },
+  {
+    id: 'recent-3',
+    query: 'science and Genesis doubt',
+    timestamp: Date.now() - 1000 * 60 * 60 * 24,
+    matchCount: 2,
+  },
+];
+
+function formatTimeAgo(timestamp: number): string {
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays}d ago`;
+}
+
 interface SemanticSearchSectionProps {
   onEngageContent: (points: number, actionLabel: string) => void;
   onOpenJourneyModal: (defaultTier?: 'bedtime' | 'archive' | 'harbor') => void;
@@ -429,6 +475,130 @@ export default function SemanticSearchSection({
   );
   const [nourishedIds, setNourishedIds] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Recent Searches state & sidebar view tab
+  const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
+  const [sidebarTab, setSidebarTab] = useState<'recent' | 'trending'>('recent');
+
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(RECENT_SEARCHES_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setRecentSearches(parsed);
+            return;
+          }
+        }
+        setRecentSearches(INITIAL_RECENT_SEARCHES);
+        window.localStorage.setItem(
+          RECENT_SEARCHES_STORAGE_KEY,
+          JSON.stringify(INITIAL_RECENT_SEARCHES)
+        );
+      } catch {
+        setRecentSearches(INITIAL_RECENT_SEARCHES);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const saveRecentSearch = useCallback((rawQuery: string, count?: number) => {
+    const q = rawQuery.trim();
+    if (!q || q.length < 2) return;
+
+    setRecentSearches((prev) => {
+      const filtered = prev.filter(
+        (item) => item.query.toLowerCase() !== q.toLowerCase()
+      );
+      const computedCount =
+        count !== undefined
+          ? count
+          : SEMANTIC_LIBRARY_ITEMS.filter((item) => {
+              const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+              const haystack = [
+                item.title,
+                item.summary,
+                item.deepDiveContent,
+                item.referenceOrEra,
+                item.bibleBook,
+                ...item.semanticKeywords,
+              ]
+                .join(' ')
+                .toLowerCase();
+              return tokens.every((tok) => haystack.includes(tok));
+            }).length;
+
+      const newItem: RecentSearchItem = {
+        id: `search-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        query: q,
+        timestamp: Date.now(),
+        matchCount: computedCount,
+      };
+      const updated = [newItem, ...filtered].slice(0, 10);
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            RECENT_SEARCHES_STORAGE_KEY,
+            JSON.stringify(updated)
+          );
+        }
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  }, []);
+
+  const handleClearRecentSearches = useCallback(() => {
+    setRecentSearches([]);
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(RECENT_SEARCHES_STORAGE_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleRemoveRecentSearch = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setRecentSearches((prev) => {
+        const updated = prev.filter((item) => item.id !== id);
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(
+              RECENT_SEARCHES_STORAGE_KEY,
+              JSON.stringify(updated)
+            );
+          }
+        } catch {
+          // ignore
+        }
+        return updated;
+      });
+    },
+    []
+  );
+
+  const handleSelectRecentSearch = (item: RecentSearchItem) => {
+    setSearchQuery(item.query);
+    setActiveTrendingId(null);
+    onEngageContent(5, `Revisited Recent Search: “${item.query}”`);
+    saveRecentSearch(item.query, item.matchCount);
+  };
+
+  // Debounced auto-save for queries as user finishes typing
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 3) return;
+    const timer = setTimeout(() => {
+      saveRecentSearch(searchQuery);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [searchQuery, saveRecentSearch]);
 
   // Allow '/' keyboard shortcut to focus the semantic search bar
   useEffect(() => {
@@ -634,6 +804,11 @@ export default function SemanticSearchSection({
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setActiveTrendingId(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    saveRecentSearch(searchQuery);
+                  }
                 }}
                 placeholder="Search e.g. “Psalm 23”, “Dead Sea Scrolls”, “science and Genesis”, “honest doubt”, or “forgiveness”…"
                 aria-label="Semantic search across scripture passages, historical context, and discussion prompts"
@@ -1016,118 +1191,270 @@ export default function SemanticSearchSection({
           </div>
 
           {/* Right 3 Columns: Anonymized Trending Queries Sidebar (Teens & Tweens) */}
+          {/* Right 3 Columns: Recent Searches & Anonymized Trending Queries Sidebar */}
           <aside
-            aria-label="Anonymized popular topics teens and tweens are searching for"
-            className="lg:col-span-3 lg:sticky lg:top-24 rounded-xl bg-[#F2ECE1]/75 border border-[#E5DEC9] p-5 space-y-4 min-w-0"
+            aria-label="Recent Searches and Anonymized Trending Queries"
+            className="lg:col-span-3 lg:sticky lg:top-24 rounded-2xl bg-[#F2ECE1]/85 border border-[#E5DEC9] p-5 space-y-4 min-w-0 shadow-xs"
           >
-            {/* Sidebar Header */}
-            <div className="space-y-1.5 pb-3.5 border-b border-[#E5DEC9]">
-              <div className="flex items-center justify-between gap-2 text-[11px] font-mono uppercase tracking-wider text-[#4A5D4E]">
-                <span>Archive Pulse</span>
-                <span className="text-[#92400E] font-semibold">Anonymized</span>
-              </div>
-              <h3
-                className="text-lg font-normal text-[#1C1917] leading-snug"
-                style={{fontFamily: 'var(--font-display), serif'}}
-              >
-                Trending Youth Queries
-              </h3>
-              <p className="text-xs text-[#57534E] leading-relaxed">
-                Quietly popular topics tweens (8–12) and teens (13–18) are
-                exploring across the archive right now.
-              </p>
-            </div>
-
-            {/* Cohort Filter Switcher */}
+            {/* View Switcher: Recent Searches (LocalStorage) vs Trending Archive Pulse */}
             <div
-              role="group"
-              aria-label="Filter trending queries by age cohort"
-              className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-[#FAF7F2] border border-[#E5DEC9]"
+              role="tablist"
+              aria-label="Sidebar view switcher"
+              className="flex items-center gap-1 p-1 rounded-xl bg-[#FAF7F2] border border-[#E5DEC9]"
             >
-              {[
-                {id: 'all', label: 'All Youth'},
-                {id: 'tweens', label: 'Tweens 8–12'},
-                {id: 'teens', label: 'Teens 13–18'},
-              ].map((tab) => {
-                const isSelected = trendingCohortFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() =>
-                      setTrendingCohortFilter(
-                        tab.id as 'all' | 'tweens' | 'teens'
-                      )
-                    }
-                    className={`min-h-[36px] px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#1C1917] text-[#FAF7F2]'
-                        : 'text-[#57534E] hover:text-[#1C1917]'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sidebarTab === 'recent'}
+                onClick={() => setSidebarTab('recent')}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                  sidebarTab === 'recent'
+                    ? 'bg-[#1C1917] text-[#FAF7F2] shadow-xs'
+                    : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                <History className="w-3.5 h-3.5 text-[#D97706]" />
+                <span>Recent ({recentSearches.length})</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sidebarTab === 'trending'}
+                onClick={() => setSidebarTab('trending')}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                  sidebarTab === 'trending'
+                    ? 'bg-[#1C1917] text-[#FAF7F2] shadow-xs'
+                    : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
+                <span>Trending ({filteredTrendingQueries.length})</span>
+              </button>
             </div>
 
-            {/* Trending Topic Cards */}
-            <div className="space-y-2.5">
-              {filteredTrendingQueries.map((trending) => {
-                const isActive =
-                  activeTrendingId === trending.id ||
-                  (searchQuery.toLowerCase() ===
-                    trending.queryTerm.toLowerCase() &&
-                    searchQuery.trim() !== '');
-                return (
-                  <button
-                    key={trending.id}
-                    type="button"
-                    onClick={() => handleSelectTrendingQuery(trending)}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
-                      isActive
-                        ? 'bg-[#FAF7F2] border-[#D97706] ring-1 ring-[#D97706]/30 shadow-xs'
-                        : 'bg-[#FAF7F2]/75 border-[#E5DEC9] hover:bg-[#FAF7F2] hover:border-[#D97706]/45'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 text-[10px] font-mono">
-                      <span
-                        className={
-                          trending.cohort === 'teens'
-                            ? 'text-[#92400E] font-semibold'
-                            : 'text-[#4A5D4E] font-semibold'
-                        }
-                      >
-                        {trending.ageBadge}
-                      </span>
-                      <span className="text-[#57534E] truncate">
-                        {trending.themeTag}
-                      </span>
+            {/* TAB 1: RECENT SEARCHES (Persisted in localStorage) */}
+            {sidebarTab === 'recent' && (
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-[#E5DEC9]">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#92400E]">
+                      <Clock className="w-3 h-3 text-[#D97706]" />
+                      <span>Private Study Trail</span>
                     </div>
-
-                    <div
-                      className="text-sm font-normal text-[#1C1917] leading-snug"
+                    <h3
+                      className="text-base font-normal text-[#1C1917]"
                       style={{fontFamily: 'var(--font-display), serif'}}
                     >
-                      “{trending.topicTitle}”
-                    </div>
+                      Recent Searches
+                    </h3>
+                  </div>
 
-                    <p className="text-[11px] text-[#57534E] leading-relaxed">
-                      {trending.contextNote}
+                  {recentSearches.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearRecentSearches}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono text-[#78716C] hover:text-[#991B1B] hover:bg-[#FEE2E2]/60 transition-colors cursor-pointer"
+                      title="Clear all recent searches from localStorage"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+                </div>
+
+                {recentSearches.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E5DEC9] text-center space-y-2">
+                    <History className="w-6 h-6 text-[#A8A29E] mx-auto opacity-70" />
+                    <p className="text-xs text-[#57534E] leading-relaxed">
+                      No recent searches yet. Search a passage, ancient artifact, or discussion question above to begin your study trail.
                     </p>
-                  </button>
-                );
-              })}
-            </div>
+                    <div className="pt-1 flex flex-wrap justify-center gap-1.5">
+                      {['Psalm 23', 'Dead Sea Scrolls', 'Genesis'].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => handleQuickPromptClick(t)}
+                          className="px-2 py-1 rounded-md text-[11px] bg-[#F2ECE1] hover:bg-[#E5DEC9] text-[#1C1917] transition-colors cursor-pointer"
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[380px] overflow-y-auto overscroll-contain pr-0.5">
+                    {recentSearches.map((item) => {
+                      const isCurrent =
+                        searchQuery.trim().toLowerCase() ===
+                        item.query.trim().toLowerCase();
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => handleSelectRecentSearch(item)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              handleSelectRecentSearch(item);
+                            }
+                          }}
+                          className={`w-full group p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                            isCurrent
+                              ? 'bg-[#FAF7F2] border-[#D97706] ring-1 ring-[#D97706]/40 shadow-xs'
+                              : 'bg-[#FAF7F2]/80 border-[#E5DEC9] hover:bg-[#FAF7F2] hover:border-[#D97706]/50'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5 min-w-0">
+                            <div className="w-6 h-6 rounded-md bg-[#F2ECE1] border border-[#E5DEC9] flex items-center justify-center shrink-0 mt-0.5 text-[#D97706]">
+                              <History className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold text-[#1C1917] truncate group-hover:text-[#92400E]">
+                                “{item.query}”
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-[#78716C] font-mono mt-0.5">
+                                <span>{formatTimeAgo(item.timestamp)}</span>
+                                <span aria-hidden="true">·</span>
+                                <span>{item.matchCount} entries</span>
+                              </div>
+                            </div>
+                          </div>
 
-            {/* Non-Invasive Privacy Footnote */}
-            <div className="pt-3 border-t border-[#E5DEC9] text-[11px] text-[#57534E] leading-relaxed">
-              <strong className="text-[#1C1917] font-semibold block mb-0.5">
-                Zero-Knowledge Cohort Aggregation
-              </strong>
-              Refreshed from de-identified seminar themes. Individual searches
-              are never logged, profiled, or visible to parents.
-            </div>
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveRecentSearch(item.id, e)}
+                            aria-label={`Remove search "${item.query}"`}
+                            className="p-1 rounded-md text-[#A8A29E] hover:text-[#991B1B] hover:bg-[#E5DEC9]/50 transition-colors cursor-pointer shrink-0"
+                            title="Remove from history"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* LocalStorage Zero-Tracking Note */}
+                <div className="pt-2.5 border-t border-[#E5DEC9] text-[10px] text-[#78716C] leading-relaxed flex items-start gap-1.5">
+                  <Clock className="w-3 h-3 text-[#D97706] shrink-0 mt-0.5" />
+                  <span>
+                    Saved privately in your browser’s localStorage. Never sent to a server or tracked.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: ANONYMIZED TRENDING QUERIES */}
+            {sidebarTab === 'trending' && (
+              <div className="space-y-3.5">
+                <div className="space-y-1 pb-2 border-b border-[#E5DEC9]">
+                  <div className="flex items-center justify-between gap-2 text-[10px] font-mono uppercase tracking-wider text-[#4A5D4E]">
+                    <span>Archive Pulse</span>
+                    <span className="text-[#92400E] font-semibold">Anonymized</span>
+                  </div>
+                  <h3
+                    className="text-base font-normal text-[#1C1917] leading-snug"
+                    style={{fontFamily: 'var(--font-display), serif'}}
+                  >
+                    Trending Youth Queries
+                  </h3>
+                  <p className="text-[11px] text-[#57534E] leading-relaxed">
+                    Quietly popular topics tweens (8–12) and teens (13–18) are exploring.
+                  </p>
+                </div>
+
+                {/* Cohort Filter Switcher */}
+                <div
+                  role="group"
+                  aria-label="Filter trending queries by age cohort"
+                  className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-[#FAF7F2] border border-[#E5DEC9]"
+                >
+                  {[
+                    {id: 'all', label: 'All Youth'},
+                    {id: 'tweens', label: 'Tweens 8–12'},
+                    {id: 'teens', label: 'Teens 13–18'},
+                  ].map((tab) => {
+                    const isSelected = trendingCohortFilter === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() =>
+                          setTrendingCohortFilter(
+                            tab.id as 'all' | 'tweens' | 'teens'
+                          )
+                        }
+                        className={`min-h-[32px] px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#1C1917] text-[#FAF7F2]'
+                            : 'text-[#57534E] hover:text-[#1C1917]'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Trending Topic Cards */}
+                <div className="space-y-2 max-h-[360px] overflow-y-auto overscroll-contain pr-0.5">
+                  {filteredTrendingQueries.map((trending) => {
+                    const isActive =
+                      activeTrendingId === trending.id ||
+                      (searchQuery.toLowerCase() ===
+                        trending.queryTerm.toLowerCase() &&
+                        searchQuery.trim() !== '');
+                    return (
+                      <button
+                        key={trending.id}
+                        type="button"
+                        onClick={() => handleSelectTrendingQuery(trending)}
+                        className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer space-y-1 ${
+                          isActive
+                            ? 'bg-[#FAF7F2] border-[#D97706] ring-1 ring-[#D97706]/30 shadow-xs'
+                            : 'bg-[#FAF7F2]/75 border-[#E5DEC9] hover:bg-[#FAF7F2] hover:border-[#D97706]/45'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono">
+                          <span
+                            className={
+                              trending.cohort === 'teens'
+                                ? 'text-[#92400E] font-semibold'
+                                : 'text-[#4A5D4E] font-semibold'
+                            }
+                          >
+                            {trending.ageBadge}
+                          </span>
+                          <span className="text-[#57534E] truncate">
+                            {trending.themeTag}
+                          </span>
+                        </div>
+
+                        <div
+                          className="text-xs font-semibold text-[#1C1917] leading-snug"
+                          style={{fontFamily: 'var(--font-display), serif'}}
+                        >
+                          “{trending.topicTitle}”
+                        </div>
+
+                        <p className="text-[11px] text-[#57534E] leading-relaxed line-clamp-2">
+                          {trending.contextNote}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2.5 border-t border-[#E5DEC9] text-[10px] text-[#57534E] leading-relaxed">
+                  <strong className="text-[#1C1917] font-semibold block mb-0.5">
+                    Zero-Knowledge Cohort Aggregation
+                  </strong>
+                  Refreshed from de-identified themes.
+                </div>
+              </div>
+            )}
           </aside>
         </div>
       </div>

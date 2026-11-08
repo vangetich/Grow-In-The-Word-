@@ -47,9 +47,9 @@ export default function BackToTopButton() {
             damping: 22,
             mass: 0.8,
           }}
-          className="fixed bottom-20 xl:bottom-6 right-4 sm:right-6 z-40 inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-[#1C1917] text-[#FAF7F2] border border-[#292524] shadow-lg hover:bg-[#292524] hover:ring-2 hover:ring-[#D97706]/60 active:scale-[0.97] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D97706]"
+          className="fixed bottom-20 sm:bottom-22 right-4 sm:right-6 z-40 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[#1C1917]/95 text-[#FAF7F2] border border-[#2E2925] shadow-lg hover:bg-[#292524] hover:border-[#D97706]/70 hover:ring-2 hover:ring-[#D97706]/40 active:scale-[0.97] transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D97706] backdrop-blur-md"
         >
-          <ArrowUp className="w-4 h-4 text-[#D97706]" />
+          <ArrowUp className="w-3.5 h-3.5 text-[#D97706]" />
           <span className="text-xs font-semibold tracking-tight whitespace-nowrap">
             Back to Top
           </span>

@@ -8,6 +8,7 @@ import JourneyScrollIndicator from '@/components/JourneyScrollIndicator';
 import HeroSection from '@/components/HeroSection';
 import HowToUseAppSection from '@/components/HowToUseAppSection';
 import DailyScripturePulse from '@/components/DailyScripturePulse';
+import MissionAboutSection from '@/components/MissionAboutSection';
 import EvidenceSection from '@/components/EvidenceSection';
 import DesignSpecInspector from '@/components/DesignSpecInspector';
 import FaqSection from '@/components/FaqSection';
@@ -920,6 +921,10 @@ export default function HomePage() {
               </div>
             </div>
           </section>
+        </div>
+
+        <div data-scroll-reveal="true" className={scrollRevealClassName}>
+          <MissionAboutSection onOpenJourneyModal={handleOpenJourneyModal} />
         </div>
 
         <div data-scroll-reveal="true" className={scrollRevealClassName}>

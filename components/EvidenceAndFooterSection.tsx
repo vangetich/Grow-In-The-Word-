@@ -148,8 +148,8 @@ export default function EvidenceAndFooterSection({
               Grow In The Word
             </div>
             <p className="text-xs text-[#78716C]">
-              An Open Space for Ancient History & Real Life (Ages 3 to 18) ·
-              Public Landing Page & UI/UX Brand Specification
+              An Open Space for Ancient History &amp; Real Life (Ages 3 to 18) ·
+              Public Landing Page &amp; UI/UX Brand Specification
             </p>
           </div>
 

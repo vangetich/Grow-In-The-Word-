@@ -72,17 +72,17 @@ export default function Navbar({
           >
             Safe Harbor
           </a>
-          <Link
-            href="/bible-study-studio"
-            className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors whitespace-nowrap shrink-0 py-1"
-          >
-            Study Studio
-          </Link>
           <a
-            href="#semantic-search"
+            href="#our-mission"
             className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors whitespace-nowrap shrink-0 py-1"
           >
-            Search Archive
+            Our Mission
+          </a>
+          <a
+            href="#testimonials"
+            className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors whitespace-nowrap shrink-0 py-1"
+          >
+            Testimonials
           </a>
         </nav>
 

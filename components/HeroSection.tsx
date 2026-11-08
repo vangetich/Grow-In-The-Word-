@@ -7,6 +7,7 @@ import {
   AGE_EVOLUTION_SNAPSHOTS,
   HERO_COPY_VARIANTS,
 } from '@/lib/design-spec-data';
+import AncientHistoryInsightPopover from '@/components/AncientHistoryInsightPopover';
 
 interface HeroSectionProps {
   onOpenJourneyModal: (defaultTier?: 'bedtime' | 'archive' | 'harbor') => void;
@@ -41,10 +42,24 @@ export default function HeroSection({onOpenJourneyModal}: HeroSectionProps) {
       <div className="relative w-full max-w-[1280px] mx-auto px-4 sm:px-6 min-w-0">
         {/* Center-Aligned Hero Fold: Disarms Skepticism with Radical Honesty */}
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          {/* Eyebrow Text (Small, uppercase, spaced) */}
-          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.22em] text-[#4A5D4E]">
-            {activeCopy.kicker}
-          </p>
+          {/* Eyebrow Text (Small, uppercase, spaced) with Ancient History Hover Insight */}
+          <div className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.22em] text-[#4A5D4E] flex items-center justify-center flex-wrap gap-1">
+            {activeCopy.kicker.includes('ANCIENT HISTORY') ? (
+              <>
+                <span>
+                  {activeCopy.kicker.split('ANCIENT HISTORY')[0]}
+                </span>
+                <AncientHistoryInsightPopover>
+                  ANCIENT HISTORY
+                </AncientHistoryInsightPopover>
+                <span>
+                  {activeCopy.kicker.split('ANCIENT HISTORY')[1]}
+                </span>
+              </>
+            ) : (
+              <span>{activeCopy.kicker}</span>
+            )}
+          </div>
 
           {/* Headline (Large Sophisticated Serif) */}
           <h1

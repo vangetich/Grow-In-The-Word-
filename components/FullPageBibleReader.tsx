@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useState, useMemo, useEffect, useRef} from 'react';
+import React, {useState, useMemo, useEffect, useRef, useCallback} from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
@@ -27,6 +27,14 @@ import {
   Layers,
   CheckCircle2,
   Type,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Square,
+  Highlighter,
+  Trash2,
+  Share2,
 } from 'lucide-react';
 import {
   FULL_BIBLE_CHAPTERS,
@@ -38,6 +46,69 @@ import {
   BibleCanonBook,
   BibleVersionId,
 } from '@/lib/full-bible-data';
+
+export type HighlightColor = 'amber' | 'sage' | 'rose' | 'sky';
+
+export interface HighlightColorMeta {
+  id: HighlightColor;
+  label: string;
+  dotColor: string;
+  lightBg: string;
+  darkBg: string;
+  borderCol: string;
+  badgeBg: string;
+}
+
+export const HIGHLIGHT_COLORS: Record<HighlightColor, HighlightColorMeta> = {
+  amber: {
+    id: 'amber',
+    label: 'Amber Glow',
+    dotColor: '#D97706',
+    lightBg: 'bg-[#FEF3C7] text-[#92400E]',
+    darkBg: 'dark:bg-[#78350F]/50 dark:text-[#FDE68A]',
+    borderCol: 'border-[#D97706]',
+    badgeBg: 'bg-[#FDE68A] text-[#78350F]',
+  },
+  sage: {
+    id: 'sage',
+    label: 'Olive Sage',
+    dotColor: '#059669',
+    lightBg: 'bg-[#D1FAE5] text-[#065F46]',
+    darkBg: 'dark:bg-[#064E3B]/50 dark:text-[#A7F3D0]',
+    borderCol: 'border-[#059669]',
+    badgeBg: 'bg-[#A7F3D0] text-[#064E3B]',
+  },
+  rose: {
+    id: 'rose',
+    label: 'Dawn Rose',
+    dotColor: '#E11D48',
+    lightBg: 'bg-[#FFE4E6] text-[#9F1239]',
+    darkBg: 'dark:bg-[#881337]/50 dark:text-[#FECDD3]',
+    borderCol: 'border-[#E11D48]',
+    badgeBg: 'bg-[#FECDD3] text-[#881337]',
+  },
+  sky: {
+    id: 'sky',
+    label: 'Still Waters Sky',
+    dotColor: '#0284C7',
+    lightBg: 'bg-[#E0F2FE] text-[#075985]',
+    darkBg: 'dark:bg-[#0C4A6E]/50 dark:text-[#BAE6FD]',
+    borderCol: 'border-[#0284C7]',
+    badgeBg: 'bg-[#BAE6FD] text-[#0C4A6E]',
+  },
+};
+
+export interface HighlightedVerse {
+  id: string; // e.g. "psalms-23-1"
+  bookId: string;
+  bookName: string;
+  chapter: number;
+  verse: number;
+  version: BibleVersionId;
+  text: string;
+  color: HighlightColor;
+  createdAt: number;
+}
 
 export type FontSizeOptionId = 'small' | 'medium' | 'large' | 'xlarge';
 
@@ -94,6 +165,7 @@ export interface FullPageBibleReaderProps {
 
 const FULL_READER_STORAGE_KEY = 'grow_in_the_word_full_page_reader_v1';
 export const CHAPTERS_READ_STORAGE_KEY = 'grow_in_the_word_chapters_read_v1';
+export const HIGHLIGHTS_STORAGE_KEY = 'grow_in_the_word_highlighted_verses_v1';
 
 export default function FullPageBibleReader({
   initialChapterId = 'psalm-23',
@@ -174,6 +246,23 @@ export default function FullPageBibleReader({
     Record<string, {verse: number; text: string}[]>
   >({});
 
+  // Audio Narration State (Web Speech API stream)
+  const [isAudioPlayerVisible, setIsAudioPlayerVisible] = useState<boolean>(false);
+  const [isNarrating, setIsNarrating] = useState<boolean>(false);
+  const [isNarrationPaused, setIsNarrationPaused] = useState<boolean>(false);
+  const [narrationSpeed, setNarrationSpeed] = useState<number>(1.0);
+  const [narratingVerseNumber, setNarratingVerseNumber] = useState<number | null>(null);
+  const narrationCancelRef = useRef<boolean>(false);
+  const currentNarratingIndexRef = useRef<number>(0);
+
+  // Local Text Highlighting State (persisted in localStorage)
+  const [savedHighlights, setSavedHighlights] = useState<HighlightedVerse[]>([]);
+  const [activeHighlightColor, setActiveHighlightColor] = useState<HighlightColor>('amber');
+  const [isHighlightDrawerOpen, setIsHighlightDrawerOpen] = useState<boolean>(false);
+  const [isHighlightModeActive, setIsHighlightModeActive] = useState<boolean>(false);
+  const [highlightFilterColor, setHighlightFilterColor] = useState<'all' | HighlightColor>('all');
+  const [copiedHighlightsNotice, setCopiedHighlightsNotice] = useState<boolean>(false);
+
   // Close Font Size Dropdown on outside click or Escape
   useEffect(() => {
     if (!isFontSizeDropdownOpen) return;
@@ -227,6 +316,14 @@ export default function FullPageBibleReader({
           const parsedRead = JSON.parse(rawRead);
           if (parsedRead && typeof parsedRead === 'object') {
             setChaptersReadMap(parsedRead);
+          }
+        }
+
+        const rawHighlights = window.localStorage.getItem(HIGHLIGHTS_STORAGE_KEY);
+        if (rawHighlights) {
+          const parsedHighlights = JSON.parse(rawHighlights);
+          if (Array.isArray(parsedHighlights)) {
+            setSavedHighlights(parsedHighlights);
           }
         }
 
@@ -473,8 +570,305 @@ export default function FullPageBibleReader({
     );
   };
 
+  // --- TEXT HIGHLIGHTING ENGINE ---
+  const persistHighlights = useCallback((newList: HighlightedVerse[]) => {
+    setSavedHighlights(newList);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(
+          HIGHLIGHTS_STORAGE_KEY,
+          JSON.stringify(newList)
+        );
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  const highlightsMap = useMemo(() => {
+    const map: Record<string, HighlightedVerse> = {};
+    for (const h of savedHighlights) {
+      map[`${h.bookId}-${h.chapter}-${h.verse}`] = h;
+    }
+    return map;
+  }, [savedHighlights]);
+
+  const handleToggleHighlightVerse = useCallback(
+    (verseNum: number, colorOverride?: HighlightColor) => {
+      const verseObj = currentChapter.verses.find((v) => v.verse === verseNum);
+      if (!verseObj) return;
+
+      const key = `${currentBook.id}-${currentChapter.chapter}-${verseNum}`;
+      const existing = highlightsMap[key];
+      const colorToUse = colorOverride || activeHighlightColor;
+
+      if (existing) {
+        if (!colorOverride || existing.color === colorToUse) {
+          const updated = savedHighlights.filter((h) => h.id !== existing.id);
+          persistHighlights(updated);
+          return;
+        }
+        const updated = savedHighlights.map((h) =>
+          h.id === existing.id
+            ? {
+                ...h,
+                color: colorToUse,
+                version: activeVersion,
+                text: verseObj.text[activeVersion],
+              }
+            : h
+        );
+        persistHighlights(updated);
+        return;
+      }
+
+      const newHighlight: HighlightedVerse = {
+        id: `${currentBook.id}-${currentChapter.chapter}-${verseNum}`,
+        bookId: currentBook.id,
+        bookName: currentBook.name,
+        chapter: currentChapter.chapter,
+        verse: verseNum,
+        version: activeVersion,
+        text: verseObj.text[activeVersion],
+        color: colorToUse,
+        createdAt: Date.now(),
+      };
+
+      persistHighlights([newHighlight, ...savedHighlights]);
+      onEngageContent?.(
+        10,
+        `Highlighted ${currentBook.name} ${currentChapter.chapter}:${verseNum} in ${HIGHLIGHT_COLORS[colorToUse].label}`
+      );
+    },
+    [
+      currentChapter,
+      currentBook,
+      activeVersion,
+      activeHighlightColor,
+      highlightsMap,
+      savedHighlights,
+      persistHighlights,
+      onEngageContent,
+    ]
+  );
+
+  const handleRemoveHighlight = useCallback(
+    (id: string) => {
+      const updated = savedHighlights.filter((h) => h.id !== id);
+      persistHighlights(updated);
+    },
+    [savedHighlights, persistHighlights]
+  );
+
+  const handleClearAllHighlights = useCallback(() => {
+    if (savedHighlights.length === 0) return;
+    persistHighlights([]);
+  }, [savedHighlights.length, persistHighlights]);
+
+  const handleCopyAllHighlights = useCallback(() => {
+    if (
+      savedHighlights.length === 0 ||
+      typeof navigator === 'undefined' ||
+      !navigator.clipboard
+    )
+      return;
+    const lines = savedHighlights.map(
+      (h) =>
+        `• "${h.text}" — ${h.bookName} ${h.chapter}:${h.verse} (${h.version}) [${HIGHLIGHT_COLORS[h.color].label}]`
+    );
+    const text = `Grow In The Word — Study Highlights (${savedHighlights.length} Verses)\n\n${lines.join(
+      '\n\n'
+    )}`;
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedHighlightsNotice(true);
+        setTimeout(() => setCopiedHighlightsNotice(false), 2000);
+      })
+      .catch(() => {});
+  }, [savedHighlights]);
+
+  const handleJumpToHighlight = useCallback(
+    (h: HighlightedVerse) => {
+      setSelectedBookId(h.bookId);
+      setSelectedChapterNumber(h.chapter);
+      setSelectedVerseNumber(h.verse);
+      setIsHighlightDrawerOpen(false);
+      onEngageContent?.(
+        5,
+        `Jumped to Highlight: ${h.bookName} ${h.chapter}:${h.verse}`
+      );
+    },
+    [onEngageContent]
+  );
+
+  const filteredHighlights = useMemo(() => {
+    if (highlightFilterColor === 'all') return savedHighlights;
+    return savedHighlights.filter((h) => h.color === highlightFilterColor);
+  }, [savedHighlights, highlightFilterColor]);
+
+  // --- AUDIO NARRATION STREAM ENGINE (Web Speech API) ---
+  const stopNarration = useCallback(() => {
+    narrationCancelRef.current = true;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsNarrating(false);
+    setIsNarrationPaused(false);
+    setNarratingVerseNumber(null);
+  }, []);
+
+  const getNaturalVoice = useCallback(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices();
+    return (
+      voices.find(
+        (v) =>
+          v.lang.startsWith('en') &&
+          (v.name.includes('Natural') ||
+            v.name.includes('Premium') ||
+            v.name.includes('Samantha') ||
+            v.name.includes('Daniel') ||
+            v.name.includes('Google') ||
+            v.name.includes('Serena'))
+      ) ||
+      voices.find((v) => v.lang.startsWith('en')) ||
+      null
+    );
+  }, []);
+
+  const speakVerseByIndexRef = useRef<(idx: number) => void>(() => {});
+
+  const speakVerseByIndex = useCallback(
+    (verseIdx: number) => {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        return;
+      }
+      if (verseIdx < 0 || verseIdx >= currentChapter.verses.length) {
+        setIsNarrating(false);
+        setIsNarrationPaused(false);
+        setNarratingVerseNumber(null);
+        return;
+      }
+
+      currentNarratingIndexRef.current = verseIdx;
+      narrationCancelRef.current = false;
+      const v = currentChapter.verses[verseIdx];
+      setNarratingVerseNumber(v.verse);
+      setSelectedVerseNumber(v.verse);
+      setIsNarrating(true);
+      setIsNarrationPaused(false);
+
+      window.speechSynthesis.cancel();
+
+      const text = `Verse ${v.verse}. ${v.text[activeVersion]}`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = narrationSpeed;
+      utterance.pitch = 0.96;
+      const voice = getNaturalVoice();
+      if (voice) utterance.voice = voice;
+
+      utterance.onend = () => {
+        if (!narrationCancelRef.current) {
+          speakVerseByIndexRef.current(verseIdx + 1);
+        }
+      };
+
+      utterance.onerror = (e) => {
+        if (e.error !== 'canceled' && e.error !== 'interrupted') {
+          setIsNarrating(false);
+          setIsNarrationPaused(false);
+          setNarratingVerseNumber(null);
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+    },
+    [currentChapter.verses, activeVersion, narrationSpeed, getNaturalVoice]
+  );
+
+  useEffect(() => {
+    speakVerseByIndexRef.current = speakVerseByIndex;
+  }, [speakVerseByIndex]);
+
+  const startOrResumeNarration = useCallback(() => {
+    setIsAudioPlayerVisible(true);
+    if (
+      isNarrationPaused &&
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window
+    ) {
+      window.speechSynthesis.resume();
+      setIsNarrationPaused(false);
+      setIsNarrating(true);
+      return;
+    }
+    const startIdx =
+      selectedVerseNumber !== null
+        ? Math.max(
+            0,
+            currentChapter.verses.findIndex((v) => v.verse === selectedVerseNumber)
+          )
+        : 0;
+    speakVerseByIndex(startIdx >= 0 ? startIdx : 0);
+    onEngageContent?.(
+      10,
+      `Began Listening to ${currentChapter.book} ${currentChapter.chapter} (${activeVersion})`
+    );
+  }, [
+    isNarrationPaused,
+    selectedVerseNumber,
+    currentChapter.verses,
+    currentChapter.book,
+    currentChapter.chapter,
+    activeVersion,
+    speakVerseByIndex,
+    onEngageContent,
+  ]);
+
+  const pauseNarration = useCallback(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.pause();
+      setIsNarrationPaused(true);
+    }
+  }, []);
+
+  const handleNextNarrationVerse = useCallback(() => {
+    const nextIdx = currentNarratingIndexRef.current + 1;
+    if (nextIdx < currentChapter.verses.length) {
+      speakVerseByIndex(nextIdx);
+    } else {
+      stopNarration();
+    }
+  }, [currentChapter.verses.length, speakVerseByIndex, stopNarration]);
+
+  const handlePrevNarrationVerse = useCallback(() => {
+    const prevIdx = Math.max(0, currentNarratingIndexRef.current - 1);
+    speakVerseByIndex(prevIdx);
+  }, [speakVerseByIndex]);
+
+  const handleSetSpeed = useCallback(
+    (newSpeed: number) => {
+      setNarrationSpeed(newSpeed);
+      if (isNarrating && !isNarrationPaused) {
+        speakVerseByIndex(currentNarratingIndexRef.current);
+      }
+    },
+    [isNarrating, isNarrationPaused, speakVerseByIndex]
+  );
+
+  // Cleanup speech synthesis on book/chapter changes and on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [selectedBookId, selectedChapterNumber]);
+
   // Previous / Next Chapter Navigation across all 1,189 chapters
   const handlePrevChapter = () => {
+    stopNarration();
     if (selectedChapterNumber > 1) {
       setSelectedChapterNumber((prev) => prev - 1);
       setSelectedVerseNumber(1);
@@ -492,6 +886,7 @@ export default function FullPageBibleReader({
   };
 
   const handleNextChapter = () => {
+    stopNarration();
     if (selectedChapterNumber < currentBook.totalChapters) {
       setSelectedChapterNumber((prev) => prev + 1);
       setSelectedVerseNumber(1);
@@ -545,6 +940,7 @@ export default function FullPageBibleReader({
   }, [testamentFilter, searchQuery]);
 
   const handleSelectBookAndChapter = (bookId: string, chapterNum: number) => {
+    stopNarration();
     setSelectedBookId(bookId);
     setSelectedChapterNumber(chapterNum);
     setSelectedVerseNumber(1);
@@ -884,6 +1280,198 @@ export default function FullPageBibleReader({
               )}
             </div>
 
+            {/* INTEGRATED AUDIO PLAYER COMPONENT IN TOOLBAR */}
+            {!isAudioPlayerVisible && !isNarrating ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAudioPlayerVisible(true);
+                  startOrResumeNarration();
+                }}
+                aria-label="Listen to chapter read aloud"
+                className={`min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${mutedSurfaceClasses}`}
+                title={`Listen to ${currentBook.name} ${selectedChapterNumber} (${activeVersion}) at ${narrationSpeed}x`}
+              >
+                <Volume2 className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>Listen</span>
+                <span className="text-[10px] font-mono text-[#D97706] opacity-80">
+                  {narrationSpeed}x
+                </span>
+              </button>
+            ) : (
+              <div
+                role="region"
+                aria-label="Integrated Chapter Audio Player"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#D97706]/15 border border-[#D97706]/60 text-xs font-semibold shadow-xs animate-in fade-in duration-200"
+              >
+                {/* Playing/Status badge */}
+                <div className="flex items-center gap-1.5 pr-1 border-r border-[#D97706]/30">
+                  <Volume2
+                    className={`w-3.5 h-3.5 text-[#D97706] ${
+                      isNarrating && !isNarrationPaused ? 'animate-pulse' : ''
+                    }`}
+                  />
+                  <span className="font-mono text-[11px] text-[#92400E] dark:text-[#FBBF24]">
+                    v.{narratingVerseNumber ?? selectedVerseNumber ?? 1}/
+                    {currentChapter.verses.length}
+                  </span>
+                </div>
+
+                {/* Prev Verse */}
+                <button
+                  type="button"
+                  onClick={handlePrevNarrationVerse}
+                  title="Previous Verse"
+                  className="p-1 rounded-lg hover:bg-[#D97706]/20 text-[#1C1917] dark:text-[#FAF7F2] transition-colors cursor-pointer"
+                  aria-label="Previous verse in audio narration"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Play / Pause Toggle */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isNarrating && !isNarrationPaused) {
+                      pauseNarration();
+                    } else {
+                      startOrResumeNarration();
+                    }
+                  }}
+                  className="w-7 h-7 rounded-lg bg-[#D97706] text-[#1A1A1A] flex items-center justify-center hover:scale-105 transition-transform cursor-pointer shadow-xs"
+                  title={
+                    isNarrating && !isNarrationPaused
+                      ? 'Pause Audio Narration'
+                      : 'Play / Resume Audio Narration'
+                  }
+                  aria-label={
+                    isNarrating && !isNarrationPaused
+                      ? 'Pause chapter narration'
+                      : 'Play chapter narration'
+                  }
+                >
+                  {isNarrating && !isNarrationPaused ? (
+                    <Pause className="w-3.5 h-3.5" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5 translate-x-0.2" />
+                  )}
+                </button>
+
+                {/* Next Verse */}
+                <button
+                  type="button"
+                  onClick={handleNextNarrationVerse}
+                  title="Next Verse"
+                  className="p-1 rounded-lg hover:bg-[#D97706]/20 text-[#1C1917] dark:text-[#FAF7F2] transition-colors cursor-pointer"
+                  aria-label="Next verse in audio narration"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Stop Narration */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopNarration();
+                    setIsAudioPlayerVisible(false);
+                  }}
+                  title="Stop Narration & Close Player"
+                  className="p-1 rounded-lg hover:bg-[#D97706]/20 text-[#1C1917] dark:text-[#FAF7F2] transition-colors cursor-pointer"
+                  aria-label="Stop audio narration and close toolbar player"
+                >
+                  <Square className="w-3 h-3 text-[#D97706]" />
+                </button>
+
+                {/* Speed Switcher */}
+                <div className="hidden sm:flex items-center gap-0.5 pl-1 border-l border-[#D97706]/30">
+                  {[0.8, 1.0, 1.2].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleSetSpeed(s)}
+                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold transition-colors cursor-pointer ${
+                        narrationSpeed === s
+                          ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917]'
+                          : 'opacity-70 hover:opacity-100'
+                      }`}
+                      title={`Set playback speed to ${s}x`}
+                    >
+                      {s}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TEXT HIGHLIGHTING COLLECTION BUTTON & DRAWER TRIGGER */}
+            <button
+              type="button"
+              onClick={() => setIsHighlightDrawerOpen((prev) => !prev)}
+              aria-expanded={isHighlightDrawerOpen}
+              aria-label="View saved highlighted verses"
+              className={`min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                isHighlightDrawerOpen
+                  ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                  : savedHighlights.length > 0
+                  ? 'border-[#D97706]/40 ' + mutedSurfaceClasses
+                  : mutedSurfaceClasses
+              }`}
+              title="View & Manage Highlighted Verses Collection"
+            >
+              <Highlighter className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+              <span>Highlights</span>
+              {savedHighlights.length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#D97706] text-[#1A1A1A]">
+                  {savedHighlights.length}
+                </span>
+              )}
+            </button>
+
+            {/* QUICK HIGHLIGHT MODE TOGGLE */}
+            <div className="hidden sm:inline-flex items-center rounded-xl border p-0.5 gap-1 border-[#E5DEC9] dark:border-[#36312E] bg-current/5">
+              <button
+                type="button"
+                onClick={() => setIsHighlightModeActive((prev) => !prev)}
+                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                  isHighlightModeActive
+                    ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917] shadow-2xs'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+                title={
+                  isHighlightModeActive
+                    ? 'Highlight Mode Active: Click any verse on the page to mark'
+                    : 'Turn on Highlight Mode to paint verses with clicks'
+                }
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{
+                    backgroundColor: HIGHLIGHT_COLORS[activeHighlightColor].dotColor,
+                  }}
+                />
+                <span className="hidden md:inline">
+                  {isHighlightModeActive ? 'Highlighting On' : 'Highlight Tool'}
+                </span>
+              </button>
+              {(['amber', 'sage', 'rose', 'sky'] as HighlightColor[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    setActiveHighlightColor(c);
+                    setIsHighlightModeActive(true);
+                  }}
+                  className={`w-5 h-5 rounded-full transition-transform cursor-pointer ${
+                    activeHighlightColor === c
+                      ? 'ring-2 ring-[#1C1917] dark:ring-[#FAF7F2] scale-110'
+                      : 'opacity-70 hover:opacity-100 hover:scale-105'
+                  }`}
+                  style={{backgroundColor: HIGHLIGHT_COLORS[c].dotColor}}
+                  title={`Set highlight color: ${HIGHLIGHT_COLORS[c].label}`}
+                />
+              ))}
+            </div>
+
             {/* Spacing & Page Width Settings Toggle */}
             <button
               type="button"
@@ -939,6 +1527,35 @@ export default function FullPageBibleReader({
             )}
           </div>
         </div>
+
+        {/* Integrated Narration Chapter Progress Bar */}
+        {(isNarrating || isAudioPlayerVisible) && (
+          <div
+            role="progressbar"
+            aria-label="Chapter audio narration progress"
+            aria-valuenow={narratingVerseNumber ?? selectedVerseNumber ?? 1}
+            aria-valuemin={1}
+            aria-valuemax={currentChapter.verses.length}
+            className="h-1 w-full bg-current/10 overflow-hidden"
+          >
+            <div
+              className="h-full bg-gradient-to-r from-[#D97706] to-[#F59E0B] transition-all duration-300"
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.max(
+                    6,
+                    Math.round(
+                      ((narratingVerseNumber ?? selectedVerseNumber ?? 1) /
+                        Math.max(1, currentChapter.verses.length)) *
+                        100
+                    )
+                  )
+                )}%`,
+              }}
+            />
+          </div>
+        )}
 
         {/* EXPANDABLE LAYOUT & MARGIN SETTINGS BAR */}
         {showSettingsBar && (
@@ -1226,6 +1843,188 @@ export default function FullPageBibleReader({
             </div>
           </div>
         )}
+
+        {/* SAVED HIGHLIGHTED VERSES COLLECTION DRAWER */}
+        {isHighlightDrawerOpen && (
+          <div
+            className={`border-t px-4 sm:px-6 py-6 shadow-2xl max-h-[80vh] overflow-y-auto ${
+              isNightSanctuary
+                ? 'bg-[#1C1917] border-[#2E2925]'
+                : 'bg-[#FAF7F2] border-[#E5DEC9]'
+            }`}
+          >
+            <div className="max-w-[1280px] mx-auto space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-current/10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#D97706] font-semibold">
+                    <Highlighter className="w-3.5 h-3.5" />
+                    <span>Local Study Sanctuary · Highlighted Verses</span>
+                  </div>
+                  <h3
+                    className="text-xl sm:text-2xl font-bold"
+                    style={{fontFamily: 'var(--font-display), serif'}}
+                  >
+                    Your Saved Biblical Highlights ({savedHighlights.length})
+                  </h3>
+                  <p className="text-xs opacity-75">
+                    Saved locally on this device in warm sanctuary tints. Click any verse to jump directly into context.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Color Filter Tabs */}
+                  <div className="inline-flex items-center gap-1 p-1 rounded-xl border bg-current/5 border-current/10 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setHighlightFilterColor('all')}
+                      className={`px-2.5 py-1 rounded-lg font-semibold cursor-pointer transition-colors ${
+                        highlightFilterColor === 'all'
+                          ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917]'
+                          : 'opacity-75 hover:opacity-100'
+                      }`}
+                    >
+                      All ({savedHighlights.length})
+                    </button>
+                    {(['amber', 'sage', 'rose', 'sky'] as HighlightColor[]).map((c) => {
+                      const count = savedHighlights.filter((h) => h.color === c).length;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setHighlightFilterColor(c)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold cursor-pointer transition-colors ${
+                            highlightFilterColor === c
+                              ? 'bg-[#1C1917] text-[#FAF7F2] dark:bg-[#FAF7F2] dark:text-[#1C1917]'
+                              : 'opacity-75 hover:opacity-100'
+                          }`}
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{backgroundColor: HIGHLIGHT_COLORS[c].dotColor}}
+                          />
+                          <span>{HIGHLIGHT_COLORS[c].label.split(' ')[0]}</span>
+                          <span className="text-[10px] opacity-70">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Copy All Notes */}
+                  {savedHighlights.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleCopyAllHighlights}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${mutedSurfaceClasses} hover:border-[#D97706]`}
+                      title="Copy all highlighted verses to clipboard as study notes"
+                    >
+                      {copiedHighlightsNotice ? (
+                        <Check className="w-3.5 h-3.5 text-[#10B981]" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-[#D97706]" />
+                      )}
+                      <span>{copiedHighlightsNotice ? 'Copied All ✓' : 'Export Notes'}</span>
+                    </button>
+                  )}
+
+                  {/* Clear All */}
+                  {savedHighlights.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllHighlights}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold hover:bg-rose-500/10 cursor-pointer"
+                      title="Clear all saved highlights"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsHighlightDrawerOpen(false)}
+                    className={`p-2 rounded-xl border cursor-pointer ${mutedSurfaceClasses}`}
+                    aria-label="Close highlights drawer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Highlights List or Empty State */}
+              {filteredHighlights.length === 0 ? (
+                <div className="py-12 text-center space-y-3">
+                  <Highlighter className="w-10 h-10 text-[#D97706]/40 mx-auto" />
+                  <p className="text-sm font-medium">
+                    {savedHighlights.length === 0
+                      ? 'No highlighted verses yet. Click any verse or turn on the Highlight Tool to mark verses.'
+                      : 'No highlights found matching this color filter.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredHighlights.map((h) => {
+                    const colorMeta = HIGHLIGHT_COLORS[h.color];
+                    return (
+                      <div
+                        key={h.id}
+                        className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${surfaceClasses} hover:border-[#D97706]`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs font-bold text-[#D97706]">
+                              {h.bookName} {h.chapter}:{h.verse} ({h.version})
+                            </span>
+                            <span
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${colorMeta.badgeBg}`}
+                            >
+                              {colorMeta.label}
+                            </span>
+                          </div>
+                          <p
+                            className="text-sm sm:text-base leading-relaxed"
+                            style={{fontFamily: 'var(--font-display), Georgia, serif'}}
+                          >
+                            &ldquo;{h.text}&rdquo;
+                          </p>
+                        </div>
+
+                        <div className="pt-3 border-t border-current/10 flex items-center justify-between gap-2 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleJumpToHighlight(h)}
+                            className="font-mono font-bold text-[#92400E] dark:text-[#FBBF24] hover:underline cursor-pointer"
+                          >
+                            Read in Context →
+                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleCopyVerse(h.version, h.verse, h.text);
+                              }}
+                              className="p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:text-[#D97706] cursor-pointer"
+                              title="Copy quote"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveHighlight(h.id)}
+                              className="p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:text-rose-500 cursor-pointer"
+                              title="Remove highlight"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* MAIN FULL-PAGE SCRIPTURE READING CANVAS */}
@@ -1412,30 +2211,62 @@ export default function FullPageBibleReader({
                   {currentChapter.verses.map((v, idx) => {
                     const isSelected = selectedVerseNumber === v.verse;
                     const startNewBlock = idx > 0 && v.paragraphStart;
+                    const highlightKey = `${currentBook.id}-${currentChapter.chapter}-${v.verse}`;
+                    const highlight = highlightsMap[highlightKey];
+                    const isCurrentlyNarrated =
+                      isNarrating && narratingVerseNumber === v.verse;
+
+                    const highlightClasses = isCurrentlyNarrated
+                      ? 'bg-[#D97706]/30 ring-2 ring-[#D97706] shadow-sm animate-pulse rounded-lg'
+                      : highlight
+                      ? `${HIGHLIGHT_COLORS[highlight.color].lightBg} ${
+                          HIGHLIGHT_COLORS[highlight.color].darkBg
+                        } ring-1 ${
+                          HIGHLIGHT_COLORS[highlight.color].borderCol
+                        } rounded-lg shadow-2xs`
+                      : isSelected
+                      ? 'bg-[#D97706]/20 ring-1 ring-[#D97706]/50 rounded-lg'
+                      : 'hover:bg-[#D97706]/10 rounded-lg';
 
                     return (
                       <React.Fragment key={v.verse}>
                         {startNewBlock && <div className="h-4 clear-both" />}
                         <span
                           onClick={() => {
-                            setSelectedVerseNumber(v.verse);
-                            setShowAllVersionsInspector(true);
+                            if (isHighlightModeActive) {
+                              handleToggleHighlightVerse(v.verse);
+                            } else {
+                              setSelectedVerseNumber(v.verse);
+                              setShowAllVersionsInspector(true);
+                            }
                           }}
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              setSelectedVerseNumber(v.verse);
-                              setShowAllVersionsInspector(true);
+                              if (isHighlightModeActive) {
+                                handleToggleHighlightVerse(v.verse);
+                              } else {
+                                setSelectedVerseNumber(v.verse);
+                                setShowAllVersionsInspector(true);
+                              }
                             }
                           }}
-                          title={`Click to compare ${currentChapter.book} ${currentChapter.chapter}:${v.verse} across all 5 Bible versions`}
-                          className={`inline rounded-lg px-1 py-0.5 transition-colors cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#D97706]/20 ring-1 ring-[#D97706]/50'
-                              : 'hover:bg-[#D97706]/10'
-                          }`}
+                          title={
+                            isCurrentlyNarrated
+                              ? `Currently narrating verse ${v.verse}`
+                              : highlight
+                              ? `${currentChapter.book} ${currentChapter.chapter}:${v.verse} (Highlighted in ${
+                                  HIGHLIGHT_COLORS[highlight.color].label
+                                })`
+                              : isHighlightModeActive
+                              ? `Click to highlight verse ${v.verse} in ${
+                                  HIGHLIGHT_COLORS[activeHighlightColor].label
+                                }`
+                              : `Click to inspect verse ${v.verse} across all 5 versions`
+                          }
+                          className={`inline px-1.5 py-0.5 transition-all cursor-pointer ${highlightClasses}`}
                         >
                           <sup className="font-mono text-[11px] font-bold text-[#D97706] mr-1.5 select-none">
                             {v.verse}
@@ -1541,26 +2372,59 @@ export default function FullPageBibleReader({
                       >
                         {chapterItem.chapter}
                       </span>
-                      {chapterItem.verses.map((v, idx) => (
-                        <React.Fragment key={v.verse}>
-                          {idx > 0 && v.paragraphStart && (
-                            <div className="h-3 clear-both" />
-                          )}
-                          <span
-                            onClick={() => {
-                              setSelectedChapterNumber(chapterItem.chapter);
-                              setSelectedVerseNumber(v.verse);
-                              setShowAllVersionsInspector(true);
-                            }}
-                            className="inline rounded px-1 py-0.5 hover:bg-[#D97706]/10 cursor-pointer"
-                          >
-                            <sup className="font-mono text-[11px] font-bold text-[#D97706] mr-1 select-none">
-                              {v.verse}
-                            </sup>
-                            <span>{v.text[activeVersion]} </span>
-                          </span>
-                        </React.Fragment>
-                      ))}
+                      {chapterItem.verses.map((v, idx) => {
+                        const highlightKey = `${currentBook.id}-${chapterItem.chapter}-${v.verse}`;
+                        const highlight = highlightsMap[highlightKey];
+                        const isCurrentlyNarrated =
+                          isNarrating &&
+                          selectedChapterNumber === chapterItem.chapter &&
+                          narratingVerseNumber === v.verse;
+                        const isSelected =
+                          selectedChapterNumber === chapterItem.chapter &&
+                          selectedVerseNumber === v.verse;
+
+                        const highlightClasses = isCurrentlyNarrated
+                          ? 'bg-[#D97706]/30 ring-2 ring-[#D97706] shadow-sm animate-pulse rounded-lg'
+                          : highlight
+                          ? `${HIGHLIGHT_COLORS[highlight.color].lightBg} ${
+                              HIGHLIGHT_COLORS[highlight.color].darkBg
+                            } ring-1 ${
+                              HIGHLIGHT_COLORS[highlight.color].borderCol
+                            } rounded-lg`
+                          : isSelected
+                          ? 'bg-[#D97706]/20 ring-1 ring-[#D97706]/50 rounded'
+                          : 'hover:bg-[#D97706]/10 rounded';
+
+                        return (
+                          <React.Fragment key={v.verse}>
+                            {idx > 0 && v.paragraphStart && (
+                              <div className="h-3 clear-both" />
+                            )}
+                            <span
+                              onClick={() => {
+                                setSelectedChapterNumber(chapterItem.chapter);
+                                if (isHighlightModeActive) {
+                                  handleToggleHighlightVerse(v.verse);
+                                } else {
+                                  setSelectedVerseNumber(v.verse);
+                                  setShowAllVersionsInspector(true);
+                                }
+                              }}
+                              className={`inline px-1 py-0.5 transition-all cursor-pointer ${highlightClasses}`}
+                              title={
+                                highlight
+                                  ? `${currentBook.name} ${chapterItem.chapter}:${v.verse} (${HIGHLIGHT_COLORS[highlight.color].label})`
+                                  : `Click to inspect or highlight ${currentBook.name} ${chapterItem.chapter}:${v.verse}`
+                              }
+                            >
+                              <sup className="font-mono text-[11px] font-bold text-[#D97706] mr-1 select-none">
+                                {v.verse}
+                              </sup>
+                              <span>{v.text[activeVersion]} </span>
+                            </span>
+                          </React.Fragment>
+                        );
+                      })}
                     </div>
                   </article>
                 );
@@ -1576,15 +2440,28 @@ export default function FullPageBibleReader({
               {currentChapter.verses.map((v) => {
                 const isSelected = selectedVerseNumber === v.verse;
                 const copyKey = `${activeVersion}-${v.verse}`;
+                const highlightKey = `${currentBook.id}-${currentChapter.chapter}-${v.verse}`;
+                const highlight = highlightsMap[highlightKey];
+                const isCurrentlyNarrated =
+                  isNarrating && narratingVerseNumber === v.verse;
+
                 return (
                   <div
                     key={v.verse}
                     onClick={() => {
-                      setSelectedVerseNumber(v.verse);
-                      setShowAllVersionsInspector(true);
+                      if (isHighlightModeActive) {
+                        handleToggleHighlightVerse(v.verse);
+                      } else {
+                        setSelectedVerseNumber(v.verse);
+                        setShowAllVersionsInspector(true);
+                      }
                     }}
-                    className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer ${
-                      isSelected
+                    className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer relative ${
+                      isCurrentlyNarrated
+                        ? 'border-[#D97706] ring-2 ring-[#D97706] bg-[#D97706]/15 shadow-sm'
+                        : highlight
+                        ? `border-l-4 ${HIGHLIGHT_COLORS[highlight.color].borderCol} ${HIGHLIGHT_COLORS[highlight.color].lightBg} ${HIGHLIGHT_COLORS[highlight.color].darkBg}`
+                        : isSelected
                         ? 'border-[#D97706] bg-[#D97706]/10 shadow-2xs'
                         : 'border-current/10 hover:border-[#D97706]/50 hover:bg-[#D97706]/5'
                     }`}
@@ -1600,35 +2477,94 @@ export default function FullPageBibleReader({
                         >
                           {currentChapter.chapter}:{v.verse}
                         </span>
-                        <p
-                          className={`${fontSizeClass} ${lineSpacingClass} flex-1`}
-                          style={{
-                            fontFamily: 'var(--font-display), Georgia, serif',
-                          }}
-                        >
-                          {v.text[activeVersion]}
-                        </p>
+                        <div className="space-y-1.5 flex-1">
+                          <p
+                            className={`${fontSizeClass} ${lineSpacingClass}`}
+                            style={{
+                              fontFamily: 'var(--font-display), Georgia, serif',
+                            }}
+                          >
+                            {v.text[activeVersion]}
+                          </p>
+                          {highlight && (
+                            <div className="flex items-center gap-1.5 pt-1">
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    HIGHLIGHT_COLORS[highlight.color].dotColor,
+                                }}
+                              />
+                              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-[#92400E] dark:text-[#FBBF24]">
+                                Highlighted in {HIGHLIGHT_COLORS[highlight.color].label}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopyVerse(
-                            activeVersion,
-                            v.verse,
-                            v.text[activeVersion]
-                          );
-                        }}
-                        title="Copy verse"
-                        className={`p-2 rounded-xl border shrink-0 transition-colors cursor-pointer ${mutedSurfaceClasses} hover:border-[#D97706]`}
-                      >
-                        {copiedVerseKey === copyKey ? (
-                          <Check className="w-3.5 h-3.5 text-[#10B981]" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Quick Listen to this Verse */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsAudioPlayerVisible(true);
+                            const idx = currentChapter.verses.findIndex(
+                              (item) => item.verse === v.verse
+                            );
+                            speakVerseByIndex(idx >= 0 ? idx : 0);
+                          }}
+                          title={`Listen to verse ${v.verse}`}
+                          className="p-2 rounded-xl border transition-colors cursor-pointer opacity-70 hover:opacity-100 hover:text-[#D97706] hover:border-[#D97706]"
+                        >
+                          <Volume2 className="w-3.5 h-3.5 text-[#D97706]" />
+                        </button>
+
+                        {/* Quick Highlight Toggle */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleHighlightVerse(v.verse);
+                          }}
+                          title={
+                            highlight
+                              ? `Remove highlight from verse ${v.verse}`
+                              : `Highlight verse ${v.verse} in ${
+                                  HIGHLIGHT_COLORS[activeHighlightColor].label
+                                }`
+                          }
+                          className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                            highlight
+                              ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                              : 'opacity-70 hover:opacity-100 hover:text-[#D97706] hover:border-[#D97706]'
+                          }`}
+                        >
+                          <Highlighter className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Copy Verse */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyVerse(
+                              activeVersion,
+                              v.verse,
+                              v.text[activeVersion]
+                            );
+                          }}
+                          title="Copy verse"
+                          className={`p-2 rounded-xl border shrink-0 transition-colors cursor-pointer ${mutedSurfaceClasses} hover:border-[#D97706]`}
+                        >
+                          {copiedVerseKey === copyKey ? (
+                            <Check className="w-3.5 h-3.5 text-[#10B981]" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1677,12 +2613,28 @@ export default function FullPageBibleReader({
                     <div className="p-6 sm:p-7 space-y-4 flex-1">
                       {currentChapter.verses.map((v) => {
                         const isSelected = selectedVerseNumber === v.verse;
+                        const highlightKey = `${currentBook.id}-${currentChapter.chapter}-${v.verse}`;
+                        const highlight = highlightsMap[highlightKey];
+                        const isCurrentlyNarrated =
+                          isNarrating && narratingVerseNumber === v.verse;
+
                         return (
                           <div
                             key={v.verse}
-                            onClick={() => setSelectedVerseNumber(v.verse)}
+                            onClick={() => {
+                              if (isHighlightModeActive) {
+                                handleToggleHighlightVerse(v.verse);
+                              } else {
+                                setSelectedVerseNumber(v.verse);
+                                setShowAllVersionsInspector(true);
+                              }
+                            }}
                             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                              isSelected
+                              isCurrentlyNarrated
+                                ? 'border-[#D97706] ring-2 ring-[#D97706] bg-[#D97706]/15 shadow-sm'
+                                : highlight
+                                ? `border-l-4 ${HIGHLIGHT_COLORS[highlight.color].borderCol} ${HIGHLIGHT_COLORS[highlight.color].lightBg} ${HIGHLIGHT_COLORS[highlight.color].darkBg}`
+                                : isSelected
                                 ? 'border-[#D97706] bg-[#D97706]/12'
                                 : 'border-current/10 hover:border-[#D97706]/40'
                             }`}
@@ -1750,6 +2702,86 @@ export default function FullPageBibleReader({
                   >
                     <X className="w-4 h-4" />
                   </button>
+                </div>
+              </div>
+
+              {/* ACTION BAR: LISTEN TO THIS VERSE & QUICK HIGHLIGHT PALETTE */}
+              <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl bg-current/5 border border-current/10 text-xs">
+                <div className="flex items-center gap-2">
+                  {/* Listen to Selected Verse */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAudioPlayerVisible(true);
+                      const idx = currentChapter.verses.findIndex(
+                        (v) => v.verse === selectedVerseObj.verse
+                      );
+                      speakVerseByIndex(idx >= 0 ? idx : 0);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D97706] text-[#1A1A1A] font-semibold hover:bg-[#F59E0B] transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>Listen to Verse {selectedVerseObj.verse}</span>
+                  </button>
+
+                  <span className="opacity-50">|</span>
+
+                  {/* Highlights Color Swatches for Selected Verse */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-[11px] opacity-75">
+                      Highlight:
+                    </span>
+                    {(['amber', 'sage', 'rose', 'sky'] as HighlightColor[]).map((c) => {
+                      const highlightKey = `${currentBook.id}-${currentChapter.chapter}-${selectedVerseObj.verse}`;
+                      const isThisColor =
+                        highlightsMap[highlightKey]?.color === c;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() =>
+                            handleToggleHighlightVerse(selectedVerseObj.verse, c)
+                          }
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                            isThisColor
+                              ? 'ring-2 ring-[#1C1917] dark:ring-[#FAF7F2] font-bold shadow-2xs ' +
+                                HIGHLIGHT_COLORS[c].badgeBg
+                              : 'hover:scale-105 border border-current/15'
+                          }`}
+                          title={`Highlight verse ${selectedVerseObj.verse} in ${HIGHLIGHT_COLORS[c].label}`}
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{
+                              backgroundColor: HIGHLIGHT_COLORS[c].dotColor,
+                            }}
+                          />
+                          <span>{HIGHLIGHT_COLORS[c].label.split(' ')[0]}</span>
+                        </button>
+                      );
+                    })}
+
+                    {highlightsMap[
+                      `${currentBook.id}-${currentChapter.chapter}-${selectedVerseObj.verse}`
+                    ] && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRemoveHighlight(
+                            `${currentBook.id}-${currentChapter.chapter}-${selectedVerseObj.verse}`
+                          )
+                        }
+                        className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer ml-1"
+                        title="Remove highlight from this verse"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-[11px] font-mono opacity-70">
+                  Select a version card below to switch primary reader translation
                 </div>
               </div>
 
@@ -1868,6 +2900,133 @@ export default function FullPageBibleReader({
           </div>
         </div>
       </main>
+
+      {/* FLOATING SANCTUARY AUDIO PLAYER BAR (Web Speech API Narration) */}
+      {isAudioPlayerVisible && (
+        <aside
+          aria-label="Scripture Audio Narration Player"
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-auto min-w-[340px] max-w-xl rounded-2xl bg-[#1C1917]/95 text-[#FAF7F2] border border-[#D97706]/70 shadow-2xl backdrop-blur-md px-4 py-3 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300"
+        >
+          {/* Left: Narration Details & Pulse Indicator */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#D97706] text-[#1A1A1A] flex items-center justify-center shrink-0 shadow-xs">
+              <Volume2
+                className={`w-4 h-4 ${
+                  isNarrating && !isNarrationPaused ? 'animate-bounce' : ''
+                }`}
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold truncate">
+                  {currentBook.name} {selectedChapterNumber} ({activeVersion})
+                </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#D97706]/20 text-[#FBBF24]">
+                  {isNarrating
+                    ? isNarrationPaused
+                      ? 'Paused'
+                      : 'Narrating'
+                    : 'Ready'}
+                </span>
+              </div>
+              <div className="text-[11px] font-mono text-[#D6D3D1] truncate">
+                {narratingVerseNumber !== null
+                  ? `Verse ${narratingVerseNumber} of ${currentChapter.verses.length}`
+                  : `Starting from Verse ${selectedVerseNumber ?? 1}`}
+              </div>
+            </div>
+          </div>
+
+          {/* Center / Right: Audio Narration Playback Controls */}
+          <div className="flex items-center gap-2">
+            {/* Prev Verse */}
+            <button
+              type="button"
+              onClick={handlePrevNarrationVerse}
+              title="Previous Verse"
+              className="p-1.5 rounded-lg text-[#FAF7F2] hover:bg-[#292524] hover:text-[#D97706] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Play / Pause Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isNarrating && !isNarrationPaused) {
+                  pauseNarration();
+                } else {
+                  startOrResumeNarration();
+                }
+              }}
+              title={
+                isNarrating && !isNarrationPaused
+                  ? 'Pause Audio Narration'
+                  : 'Start / Resume Audio Narration'
+              }
+              className="w-9 h-9 rounded-xl bg-[#D97706] text-[#1A1A1A] font-bold flex items-center justify-center hover:scale-105 transition-all cursor-pointer shadow-xs"
+            >
+              {isNarrating && !isNarrationPaused ? (
+                <Pause className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4 translate-x-0.5" />
+              )}
+            </button>
+
+            {/* Stop Narration */}
+            <button
+              type="button"
+              onClick={stopNarration}
+              title="Stop Narration"
+              className="p-1.5 rounded-lg text-[#FAF7F2] hover:bg-[#292524] hover:text-[#D97706] transition-colors cursor-pointer"
+            >
+              <Square className="w-4 h-4" />
+            </button>
+
+            {/* Next Verse */}
+            <button
+              type="button"
+              onClick={handleNextNarrationVerse}
+              title="Next Verse"
+              className="p-1.5 rounded-lg text-[#FAF7F2] hover:bg-[#292524] hover:text-[#D97706] transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Speed Pills: 0.75x, 1x, 1.25x */}
+            <div className="hidden sm:inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-[#292524] border border-[#3E3834] text-[10.5px] font-mono">
+              {[0.75, 1.0, 1.25].map((spd) => (
+                <button
+                  key={spd}
+                  type="button"
+                  onClick={() => handleSetSpeed(spd)}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                    narrationSpeed === spd
+                      ? 'bg-[#D97706] text-[#1A1A1A] font-bold'
+                      : 'text-[#D6D3D1] hover:text-white'
+                  }`}
+                  title={`Narration speed ${spd}x`}
+                >
+                  {spd}x
+                </button>
+              ))}
+            </div>
+
+            {/* Close Audio Bar */}
+            <button
+              type="button"
+              onClick={() => {
+                stopNarration();
+                setIsAudioPlayerVisible(false);
+              }}
+              title="Dismiss Audio Bar"
+              className="ml-1 p-1.5 rounded-lg text-[#A8A29E] hover:text-[#FAF7F2] hover:bg-[#292524] transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
