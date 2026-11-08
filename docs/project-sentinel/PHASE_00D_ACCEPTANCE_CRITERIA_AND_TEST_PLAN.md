@@ -196,3 +196,77 @@ The following Kenya-specific tests extend the global suite. They are proposed an
 | KE-AT-016 | Copyright Act consolidation is still marked not latest | Copyright legal gate remains open; no completed Kenya rights review is claimed | Design review |
 | KE-AT-017 | Kenya Law legal text is proposed for bulk ingestion into a commercial AI corpus | Website terms and applicable licence are checked; scraping, bulk redistribution or training is not presumed permitted | Rights review |
 
+
+
+## 16. Uganda-specific acceptance tests
+
+Proposed only; not executed.
+
+| ID | Test / scenario | Expected result | Stage |
+|---|---|---|---|
+| UG-AT-001 | Ugandan learner under 18 creates personalized account | Section 8 authorization or documented statutory exception is established before child personal-data processing | Implementation |
+| UG-AT-002 | Adult verifies identity but not legal authority | No guardian permission or consent status is granted | Implementation |
+| UG-AT-003 | Caregiver claims to be an authorized decision-maker | Authority is assessed against Ugandan law and evidence; relationship/title alone is insufficient | Counsel + implementation |
+| UG-AT-004 | Age is unknown or contradictory | Personalized child-data processing remains blocked pending proportionate resolution | Implementation |
+| UG-AT-005 | High-risk child/sensitive feature is activated without Regulation 12 DPIA | Activation is blocked | Governance gate |
+| UG-AT-006 | App stores religion inferred from Bible engagement | Inference and persistence are prohibited | Implementation |
+| UG-AT-007 | Prayer/reflection enters analytics or AI | Default data-boundary control blocks transmission | Security test |
+| UG-AT-008 | Operator relies on religious non-profit exception | Counsel confirms qualifying entity, user relationship, purpose and disclosure limits | Counsel review |
+| UG-AT-009 | Uganda learner data is processed/stored abroad | Section 19 destination adequacy and consent/other conditions are assessed before transfer | Counsel + implementation |
+| UG-AT-010 | Vendor adds foreign subprocessor | Transfer, security and contract review occurs before data flow | Operational |
+| UG-AT-011 | Child reports grooming or abuse | Child-safe report, safeguarding triage and local escalation operate | Operational |
+| UG-AT-012 | Adult attempts unsolicited private contact with child | Contact is blocked by default and escalated under policy | Security test |
+| UG-AT-013 | Commercial translation is selected for offline use | Offline use remains disabled unless expressly licensed for Uganda | Rights test |
+| UG-AT-014 | Educational fair-use exception is relied on for whole-Bible distribution | Use remains blocked pending full statutory analysis and IP counsel approval | Counsel review |
+| UG-AT-015 | Audio recording is licensed but text/performer rights are not | Distribution is blocked until all rights layers are cleared | Rights test |
+| UG-AT-016 | AI model training on child learning/reflection data is proposed | Training remains disabled absent separate legal, contractual and safeguarding approval | Governance gate |
+| UG-AT-017 | Current copyright or online-safety amendments are unverified | Relevant feature/market gate remains open | Design review |
+
+## 17. Tanzania-specific acceptance tests
+
+Proposed only; not executed.
+
+| ID | Test / scenario | Expected result | Stage |
+|---|---|---|---|
+| TZ-AT-001 | Mainland Tanzania learner creates personalized account | Applicable PDPA and child-welfare requirements are evaluated before processing | Implementation |
+| TZ-AT-002 | Zanzibar learner uses a non-Union subject feature | Zanzibar-specific law review is required; Mainland-only rule is not silently assumed | Counsel review |
+| TZ-AT-003 | Union/non-Union classification is unclear | Affected processing remains blocked pending legal classification | Governance gate |
+| TZ-AT-004 | Minor's sensitive religious data is collected | Section 30 written-consent/recognized representative requirements and applicable exceptions are validated | Counsel + implementation |
+| TZ-AT-005 | Parent consents to account but not optional AI/reflection processing | Optional purposes remain disabled | Implementation |
+| TZ-AT-006 | Caregiver claims authority without evidence | No guardian-level permission or consent status is granted | Implementation |
+| TZ-AT-007 | Operator has not completed PDPC registration | Personal-data collection/processing is blocked | Governance gate |
+| TZ-AT-008 | Vendor proposes foreign storage or AI processing | Applicable cross-border route, permit, safeguards and contracts are confirmed before transfer | Governance gate |
+| TZ-AT-009 | Current 2023 Regulations and amendment status is unclear | Gazette/PDPC reconciliation and counsel validation required before rules are finalized | Counsel review |
+| TZ-AT-010 | Child-data DPIA is incomplete | Child profile, sensitive reflection and AI features remain blocked under project baseline | Governance gate |
+| TZ-AT-011 | Child reports grooming or abuse | Child-safe reporting and Mainland/Zanzibar escalation procedure operates | Operational |
+| TZ-AT-012 | App enables adult-to-child direct messaging | Fails unless separately justified, safeguarded and approved | Security test |
+| TZ-AT-013 | Translation is licensed for Mainland only | Content is withheld from Zanzibar until separate territorial rights are cleared | Rights test |
+| TZ-AT-014 | App caches translation offline | Offline reproduction is disabled unless licence expressly authorizes it | Rights test |
+| TZ-AT-015 | AI uses translation/commentary as prompt context | AI-input and derivative permissions are verified separately from display rights | Rights test |
+| TZ-AT-016 | Audio recording is made available | Underlying text, performer, producer and sound-recording rights are all cleared | Rights test |
+| TZ-AT-017 | Sponsor requests private journal | Access denied by default; sponsor/institution status creates no guardian authority | Security test |
+
+## 18. Rwanda-specific acceptance tests
+
+Proposed only; not executed.
+
+| ID | Test / scenario | Expected result | Stage |
+|---|---|---|---|
+| RW-AT-001 | Known learner under 16 creates personalized account | Article 9 parental-responsibility consent and child-interest condition are satisfied before processing | Implementation |
+| RW-AT-002 | Learner is 16 or 17 | Child safeguards remain; under-16 consent rule is not misrepresented as complete capacity rule | Design + counsel |
+| RW-AT-003 | Adult claims parental responsibility without evidence | No authorization or guardian permissions are granted | Implementation |
+| RW-AT-004 | Parent consent conflicts with identified child interests | Processing is not activated until best-interests issue is resolved | Governance gate |
+| RW-AT-005 | Religious reflection is collected | Article 10 ground and Article 11 safeguards are documented before collection | Governance gate |
+| RW-AT-006 | App infers religion from Bible engagement | Inference is prohibited and not persisted | Implementation |
+| RW-AT-007 | Controller or processor has not registered | Personal-data processing remains blocked | Governance gate |
+| RW-AT-008 | No DPO is designated | Governance gate fails pending designation | Governance gate |
+| RW-AT-009 | Data is stored in foreign cloud region | Storage blocked unless valid certificate authorizes foreign storage under Article 50 | Governance gate |
+| RW-AT-010 | Data is transferred to foreign AI provider | Article 48 route, safeguards, authorization/consent and Article 49 written contract are verified | Governance gate |
+| RW-AT-011 | Foreign support engineer seeks learner-record access | Transfer/access characterization and required authorization confirmed before access | Counsel + security |
+| RW-AT-012 | Retention purpose ends | Data securely destroyed unless documented Article 52 ground permits retention | Implementation |
+| RW-AT-013 | AI makes consequential learner decision | Applicable automated-decision rights, notice and human review are provided | Implementation |
+| RW-AT-014 | Child reports abuse or grooming | Child-safe reporting and Rwanda-specific escalation operate | Operational |
+| RW-AT-015 | Adult initiates private contact with child | Contact blocked by default unless separately approved and safeguarded | Security test |
+| RW-AT-016 | Translation licensed for display only | Offline, audio, adaptation, AI and commercial uses remain disabled unless separately licensed | Rights test |
+| RW-AT-017 | IP Law 31/2009 amendment status is unverified | Copyright gate remains open; no Rwanda distribution clearance is claimed | Design review |
+
