@@ -231,7 +231,7 @@ Proposed only; not executed.
 | TZ-AT-001 | Mainland Tanzania learner creates personalized account | Applicable PDPA and child-welfare requirements are evaluated before processing | Implementation |
 | TZ-AT-002 | Zanzibar learner uses a non-Union subject feature | Zanzibar-specific law review is required; Mainland-only rule is not silently assumed | Counsel review |
 | TZ-AT-003 | Union/non-Union classification is unclear | Affected processing remains blocked pending legal classification | Governance gate |
-| TZ-AT-004 | Minor's sensitive religious data is collected | Section 30 written-consent/recognized representative requirements and applicable exceptions are validated | Counsel + implementation |
+| TZ-AT-004 | Any personal data relating to a child is collected | The statutory sensitive-data definition is applied; section 30 written consent/representative requirements and any applicable exception are validated before processing | Counsel + implementation |
 | TZ-AT-005 | Parent consents to account but not optional AI/reflection processing | Optional purposes remain disabled | Implementation |
 | TZ-AT-006 | Caregiver claims authority without evidence | No guardian-level permission or consent status is granted | Implementation |
 | TZ-AT-007 | Operator has not completed PDPC registration | Personal-data collection/processing is blocked | Governance gate |
