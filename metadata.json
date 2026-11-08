@@ -1,0 +1,6 @@
+{
+  "name": "Vespera — Decade-Spanning Scripture Companion & UI/UX Spec",
+  "description": "Public-facing landing page and complete minimalist brand & UI/UX design specification for Vespera, a decade-spanning Bible app for ages 3 to 18.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

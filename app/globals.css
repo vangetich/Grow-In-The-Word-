@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+html,
+body {
+  overflow-x: clip;
+  overflow-anchor: none;
+  max-width: 100%;
+  width: 100%;
+}
