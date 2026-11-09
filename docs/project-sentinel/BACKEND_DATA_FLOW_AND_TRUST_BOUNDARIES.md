@@ -57,3 +57,25 @@ Record actor, action, resource class/identifier, decision, purpose, timestamp, c
 
 ## 9. Open threat-model questions
 Deployment topology, session type, account recovery, child/guardian legal model, journal threat model, data residency, AI vendor retention/training terms, analytics vendors and operational access model remain unknown.
+
+
+## 10. Evidence and trust-boundary review addendum — 2026-11-09
+
+### Verified state versus target state
+The Phase 00B review found no application API routes or verified server-side identity/persistence boundary in the reviewed repository tree. The flows in this document are target-state proposals, not observed runtime behavior. The owner confirms that the application is not deployed or hosted.
+
+### Required additional controls
+- Treat browser state, localStorage, route parameters, hidden UI controls and client-submitted learner/actor/guardian identifiers as untrusted.
+- Resolve actor identity from a verified server session; resolve legal authority, learner relationship, consent, purpose and resource scope independently.
+- Do not send private journal text, religious reflection content, safeguarding reports, credentials or unrelated family records to external processors by default.
+- Before any processor receives personal data, document purpose, lawful basis/authority, minimization, region, retention, subprocessors, deletion, incident notice and contract terms.
+- Cross-border routing, storage, backups and support access must be included in the transfer assessment; a vendor region selector alone is not a complete transfer assessment.
+- Data-rights operations must propagate to approved projections, caches, search indexes, object versions and processors, subject to documented legal retention exceptions.
+- Keep operational security logs separate from product analytics. Record decision metadata without copying sensitive content into logs.
+
+### Evidence labels
+- **Verified:** static Phase 00B findings and owner-confirmed non-deployment status.
+- **Proposed:** trust zones, request flows, policy checks, AI Gateway, audit and failure controls.
+- **Assumption:** a future server boundary can enforce these controls consistently for every route and background job.
+- **Unresolved:** session mechanism, provider topology, external processors, data locations, key management, incident roles and operational access.
+- **Approval:** threat model, privacy/legal review and owner approval are required before protected data flows are enabled.
