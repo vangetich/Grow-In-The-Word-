@@ -33,13 +33,12 @@ Single ongoing register. Add findings with evidence and severity; close only wit
 | PS-27 | Rwanda online-safety and copyright current-law mapping is incomplete | High | Open | Verify current Law 31/2009 amendments, ICT/cybercrime provisions, Child Online Protection Policy status, reporting and platform obligations with counsel |
 
 | PS-28 | East African comparative rules are not yet counsel-reviewed or specified as an approved policy catalogue | Critical | Open | Review EAST_AFRICAN_COMPARATIVE_LEGAL_REQUIREMENTS_AND_JURISDICTION_DIFFERENCES_MATRIX.md; resolve age, territory, sensitive-data, registration, transfer, online-safety and copyright differences with local counsel before specifying or implementing policy logic |
+| PS-29 | Jurisdiction rule catalogue has not yet received source-by-source validation and legal approval | Critical | Open | `PHASE_00D_JURISDICTION_RULE_CATALOGUE.md` is a structured preliminary inventory; verify current primary instruments, territorial reach, commencement, exceptions and counsel advice before approval |
+| PS-30 | Policy decision contract is conceptual and has no approved enforcement implementation | Critical | Open | `PHASE_00D_POLICY_DECISION_SPECIFICATION.md`; no executable rules engine, server-side enforcement or approved policy version exists |
+| PS-31 | Tanzania Zanzibar non-Union privacy, child protection, online safety and copyright analysis remains unresolved | Critical | Open | Separate jurisdiction assessment and local counsel opinion required; do not inherit Mainland rules |
+| PS-32 | Policy test vectors are design proposals and have not been executed | High | Open | `PHASE_00D_POLICY_TEST_VECTORS.md` contains 50 synthetic vectors; build future harness only after rule approval and implementation authorization |
 
 ## Lifecycle
 Open → Triaged → In Progress → Fixed (unverified) → Verified → Closed. Deferral requires rationale, risk acceptance authority, review date and compensating control.
 
 Each entry should include affected path/line or commit, inspection/reproduction method, impact, acceptance criteria, remediation commit and verification result. Do not mark fixed based on a code change alone.
-
-| PS-29 | Jurisdiction rule catalogue has not yet received source-by-source validation and legal approval | Critical | Open | `PHASE_00D_JURISDICTION_RULE_CATALOGUE.md` is a structured preliminary inventory; verify current primary instruments, territorial reach, commencement, exceptions and counsel advice before approval |
-| PS-30 | Policy decision contract is conceptual and has no approved enforcement implementation | Critical | Open | `PHASE_00D_POLICY_DECISION_SPECIFICATION.md`; no executable rules engine, server-side enforcement or approved policy version exists |
-| PS-31 | Tanzania Zanzibar non-Union privacy, child protection, online safety and copyright analysis remains unresolved | Critical | Open | Separate jurisdiction assessment and local counsel opinion required; do not inherit Mainland rules |
-| PS-32 | Policy test vectors are design proposals and have not been executed | High | Open | `PHASE_00D_POLICY_TEST_VECTORS.md` contains 50 synthetic vectors; build future harness only after rule approval and implementation authorization |
