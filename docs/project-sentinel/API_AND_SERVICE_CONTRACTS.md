@@ -24,6 +24,8 @@
 | Family | getFamilyProjection, listAuthorizedLearners | Explicitly permitted family view |
 | Reflection | createPrivateEntry, readPrivateEntry, deletePrivateEntry | Separate restricted domain; deferred |
 | AI Gateway | requestCoaching, validateCitation | Allowlisted context and safe provider mediation |
+| Content & Rights | getContentProvenance, evaluatePermittedUse | Return source/edition/licence evidence; deny distribution when permission is unknown; do not make unsupported legal determinations |
+| Safeguarding (conditional) | submitConcern, getAssignedCase, recordDisposition | Restricted case operations only after accountable roles, escalation and retention are approved |
 | Data Rights | requestExport, requestDeletion, requestCorrection | Verified subject rights workflow |
 
 Names are illustrative; final operation names follow domain discovery.
