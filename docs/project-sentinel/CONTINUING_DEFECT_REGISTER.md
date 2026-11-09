@@ -15,6 +15,8 @@ Single ongoing register. Add findings with evidence and severity; close only wit
 | PS-09 | Offline cache readiness is not substantiated | High | Open | NetworkStatusIndicator.tsx L35-L70, L143-L215; implement cache/service worker or revise claim |
 | PS-10 | Dependency compatibility concern: eslint-config-next 16.0.8 alongside next 15.4.9 | Medium | Open | package.json L13-L40; verify install/build and align versions if needed |
 
+| PS-11 | Audit branch is three commits behind current main; newer main-only UI/component changes are not reconciled with Phase 00B mappings | High | Open | GitHub compare: merge base 060ef2f; audit branch 40 commits ahead and 3 behind main; reconcile source/component mappings before implementation, without silently merging or changing application code |
+
 ## Lifecycle
 Open → Triaged → In Progress → Fixed (unverified) → Verified → Closed. Deferral requires rationale, risk acceptance authority, review date and compensating control.
 
