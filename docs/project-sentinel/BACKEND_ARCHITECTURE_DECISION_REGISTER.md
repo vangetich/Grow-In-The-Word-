@@ -66,3 +66,12 @@ The detailed design is in LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY
 - The audit branch is 40 commits ahead of and 3 behind main. Main-only commits modify UI/components. Do not treat this audit branch's component map as a current-main source audit; reconcile before implementation.
 - No physical schema, production provider, cloud project, authentication service, privileged operation or real-data migration is approved by this register.
 - ADR-BE-015 and ADR-BE-016 authorize evaluation priority only. They do not authorize Cloud Run, Cloud SQL, PostgreSQL or another provider for production.
+
+
+## Evidence reconciliation and review status — 2026-11-09
+
+- The Phase 00B source baseline is 060ef2f9c651896aaf1d719e5b8f78ee251e054e. Commit fb0c1c2fcb5db9f853320b486a4ad2d45e824807 is a documentation-only roadmap update, not the source baseline.
+- The owner confirms the app is in Google AI Studio development and is not deployed or hosted.
+- The audit branch is 40 commits ahead of and 3 behind main. Main-only commits modify UI/components. Do not treat this audit branch's component map as a current-main source audit; reconcile before implementation.
+- No physical schema, production provider, cloud project, authentication service, privileged operation or real-data migration is approved by this register.
+- ADR-BE-015 and ADR-BE-016 authorize evaluation priority only. They do not authorize Cloud Run, Cloud SQL, PostgreSQL or another provider for production.
