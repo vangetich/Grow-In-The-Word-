@@ -2,6 +2,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   output: 'standalone',
   transpilePackages: ['motion'],
   eslint: {
@@ -21,7 +22,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config, {dev}) => {
+  webpack: (config, {dev, isServer}) => {
+    config.cache = dev ? {type: 'memory'} : false;
+    if (!isServer && config.output) {
+      config.output.chunkLoadTimeout = 300000;
+    }
     // HMR is disabled in AI Studio via DISABLE_HMR env var.
     // Do not modify—file watching is disabled to prevent flickering during agent edits.
     if (dev && process.env.DISABLE_HMR === 'true') {

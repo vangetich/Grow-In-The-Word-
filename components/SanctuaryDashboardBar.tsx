@@ -29,6 +29,10 @@ import {
   ShieldCheck,
   CheckCircle2,
   Compass,
+  Pin,
+  Star,
+  BookmarkCheck,
+  BookMarked,
 } from 'lucide-react';
 import Link from 'next/link';
 import MilestoneShareModal from '@/components/MilestoneShareModal';
@@ -36,7 +40,9 @@ import GrowthHistoryD3Chart from '@/components/GrowthHistoryD3Chart';
 import WeeklyEngagementRecharts from '@/components/WeeklyEngagementRecharts';
 import GrowthTrackerModal from '@/components/GrowthTrackerModal';
 import NetworkStatusIndicator from '@/components/NetworkStatusIndicator';
-import DailyPrayerModal from '@/components/DailyPrayerModal';
+import DailyPrayerModal, {
+  AGE_APPROPRIATE_MEDITATIVE_PRAYERS,
+} from '@/components/DailyPrayerModal';
 
 export interface GrowthStageInfo {
   stageNumber: number;
@@ -397,7 +403,7 @@ export default function SanctuaryDashboardBar({
   // Sidebar Menu state
   const [isSidebarMenuOpen, setIsSidebarMenuOpen] = useState(false);
   const [expandedSubmenu, setExpandedSubmenu] = useState<
-    'none' | 'affirmation' | 'history' | 'dashboard'
+    'none' | 'affirmation' | 'prayer' | 'history' | 'dashboard'
   >('none');
 
   const menuContainerRef = useRef<HTMLDivElement>(null);
@@ -437,7 +443,7 @@ export default function SanctuaryDashboardBar({
   }, [isSidebarMenuOpen]);
 
   const handleToggleSubmenu = (
-    submenu: 'affirmation' | 'history' | 'dashboard'
+    submenu: 'affirmation' | 'prayer' | 'history' | 'dashboard'
   ) => {
     setExpandedSubmenu((prev) => (prev === submenu ? 'none' : submenu));
   };
@@ -554,8 +560,8 @@ export default function SanctuaryDashboardBar({
       .reverse()
       .find((stage) => growthPoints >= stage.minPoints) || GROWTH_STAGES[0];
 
-  // Growth History Sub-Tab state: 'recharts' vs 'history' (D3)
-  const [historyTab, setHistoryTab] = useState<'history' | 'recharts'>(
+  // Growth History Sub-Tab state: 'recharts' | 'history' (D3) | 'pinned' (Pinned Affirmations)
+  const [historyTab, setHistoryTab] = useState<'history' | 'recharts' | 'pinned'>(
     'recharts'
   );
 
@@ -614,10 +620,34 @@ export default function SanctuaryDashboardBar({
     return () => clearTimeout(timer);
   }, [growthBloomActive]);
 
-  // Daily Affirmation State
+  // Daily Affirmation & Pinned Affirmations State
   const [selectedAffirmationIndex, setSelectedAffirmationIndex] =
     useState<number>(0);
   const [copiedAffirmation, setCopiedAffirmation] = useState(false);
+  const [pinnedAffirmations, setPinnedAffirmations] = useState<DailyAffirmationItem[]>([]);
+
+  // Favorite Prayers & Age-Group Prayer Sidebar State
+  const [favoritePrayerIds, setFavoritePrayerIds] = useState<string[]>([]);
+  const [sidebarPrayerAgeGroup, setSidebarPrayerAgeGroup] = useState<'3-7' | '8-12' | '13-18'>('8-12');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      try {
+        const storedPinned = localStorage.getItem('grow_in_the_word_pinned_affirmations_v1');
+        if (storedPinned) {
+          const parsed = JSON.parse(storedPinned);
+          if (Array.isArray(parsed)) setPinnedAffirmations(parsed);
+        }
+        const storedFavs = localStorage.getItem('grow_in_the_word_favorite_prayers_v1');
+        if (storedFavs) {
+          const parsed = JSON.parse(storedFavs);
+          if (Array.isArray(parsed)) setFavoritePrayerIds(parsed);
+        }
+      } catch {}
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const activeFormationTierId: 'bedtime' | 'archive' | 'harbor' =
     currentStage.id === 'seed' || currentStage.id === 'sprout'
@@ -629,6 +659,38 @@ export default function SanctuaryDashboardBar({
   const tierAffirmations = DAILY_AFFIRMATIONS_DATA[activeFormationTierId];
   const activeDailyAffirmation =
     tierAffirmations[selectedAffirmationIndex % tierAffirmations.length];
+
+  const handlePinAffirmation = (item: DailyAffirmationItem) => {
+    setPinnedAffirmations((prev) => {
+      const exists = prev.some((a) => a.id === item.id);
+      const updated = exists ? prev.filter((a) => a.id !== item.id) : [...prev, item];
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('grow_in_the_word_pinned_affirmations_v1', JSON.stringify(updated));
+        }
+      } catch {}
+      if (!exists) {
+        onManualNourish(10, `Pinned Daily Affirmation (${item.scriptureReference}) to Growth History`);
+      }
+      return updated;
+    });
+  };
+
+  const handleToggleSidebarFavoritePrayer = (prayerId: string, prayerTitle: string) => {
+    setFavoritePrayerIds((prev) => {
+      const isFav = prev.includes(prayerId);
+      const updated = isFav ? prev.filter((id) => id !== prayerId) : [...prev, prayerId];
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('grow_in_the_word_favorite_prayers_v1', JSON.stringify(updated));
+        }
+      } catch {}
+      if (!isFav) {
+        onManualNourish(10, `Saved Age-Appropriate Meditative Prayer: “${prayerTitle}” to Favorites`);
+      }
+      return updated;
+    });
+  };
 
   const handleCopyDailyAffirmation = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -892,62 +954,231 @@ export default function SanctuaryDashboardBar({
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-1">
-                        <button
-                          type="button"
-                          onClick={handleCopyDailyAffirmation}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1C1917] hover:bg-[#2E2925] text-[11px] font-medium text-[#D6D3D1] border border-[#36312E] transition-colors cursor-pointer"
-                        >
-                          {copiedAffirmation ? (
-                            <>
-                              <Check className="w-3 h-3 text-[#A7F3D0]" />
-                              <span>Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3 text-[#D97706]" />
-                              <span>Copy verse</span>
-                            </>
-                          )}
-                        </button>
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleCopyDailyAffirmation}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1C1917] hover:bg-[#2E2925] text-[10.5px] font-medium text-[#D6D3D1] border border-[#36312E] transition-colors cursor-pointer"
+                          >
+                            {copiedAffirmation ? (
+                              <>
+                                <Check className="w-3 h-3 text-[#A7F3D0]" />
+                                <span>Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3 text-[#D97706]" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handlePinAffirmation(activeDailyAffirmation)}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-colors cursor-pointer ${
+                              pinnedAffirmations.some((a) => a.id === activeDailyAffirmation.id)
+                                ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                                : 'bg-[#1C1917] hover:bg-[#2E2925] text-[#FDE68A] border-[#D97706]/50'
+                            }`}
+                          >
+                            <Pin className="w-3 h-3 text-current" />
+                            <span>
+                              {pinnedAffirmations.some((a) => a.id === activeDailyAffirmation.id)
+                                ? 'Pinned to Growth History ✓'
+                                : 'Pin to Growth History (+10)'}
+                            </span>
+                          </button>
+                        </div>
 
                         <button
                           type="button"
                           onClick={handleCycleDailyAffirmation}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#D97706]/20 hover:bg-[#D97706]/35 text-[#FDE68A] text-[11px] font-semibold border border-[#D97706]/40 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#D97706]/20 hover:bg-[#D97706]/35 text-[#FDE68A] text-[10.5px] font-semibold border border-[#D97706]/40 transition-colors cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3 text-[#D97706]" />
-                          <span>Next reflection (+5)</span>
+                          <span>Next (+5)</span>
                         </button>
                       </div>
+
+                      {pinnedAffirmations.length > 0 && (
+                        <div className="pt-1.5 border-t border-[#36312E]/80 flex items-center justify-between text-[10.5px]">
+                          <span className="text-[#A8A29E]">
+                            {pinnedAffirmations.length} affirmation{pinnedAffirmations.length === 1 ? '' : 's'} pinned
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHistoryTab('pinned');
+                              setExpandedSubmenu('history');
+                            }}
+                            className="text-[#FBBF24] hover:underline font-medium cursor-pointer"
+                          >
+                            View in Growth History →
+                          </button>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* ITEM 2: Daily Prayer (Direct Action Trigger) */}
-              <div className="rounded-2xl bg-[#24211E]/90 border border-[#36312E] p-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-[#1C1917] border border-[#D97706]/50 flex items-center justify-center shrink-0">
-                    <Heart className="w-3.5 h-3.5 text-[#D97706]" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold text-[#FAF7F2]">
-                      Daily Prayer
+              {/* ITEM 2: Daily Prayer (Expandable Age-Appropriate Meditative Prayers + Vault Trigger) */}
+              <div className="rounded-2xl bg-[#24211E]/90 border border-[#36312E] overflow-hidden transition-colors">
+                <div className="p-3 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSubmenu('prayer')}
+                    aria-expanded={expandedSubmenu === 'prayer'}
+                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-[#1C1917] border border-[#D97706]/50 flex items-center justify-center shrink-0">
+                      <Heart className="w-3.5 h-3.5 text-[#D97706]" />
                     </div>
-                    <div className="text-[10px] text-[#A8A29E] truncate">
-                      Private petition vault &amp; quiet prayer prompts
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-[#FAF7F2]">
+                          Daily Prayer
+                        </span>
+                        {favoritePrayerIds.length > 0 && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-[#D97706]/20 text-[#FBBF24] text-[9.5px] font-mono">
+                            <Star className="w-2.5 h-2.5 fill-current" />
+                            {favoritePrayerIds.length}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-[#A8A29E] truncate">
+                        Ages 3–7, 8–12 &amp; 13–18 meditative prayers
+                      </div>
                     </div>
-                  </div>
+                    {expandedSubmenu === 'prayer' ? (
+                      <ChevronDown className="w-4 h-4 text-[#D97706] shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#A8A29E] shrink-0" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPrayerModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-xl bg-[#292524] hover:bg-[#36312E] border border-[#D97706]/70 text-[#FDE68A] text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    Vault (+15)
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsPrayerModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#292524] hover:bg-[#36312E] border border-[#D97706]/70 text-[#FDE68A] text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                >
-                  Open (+15)
-                </button>
+                <AnimatePresence>
+                  {expandedSubmenu === 'prayer' && (
+                    <motion.div
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: 'auto'}}
+                      exit={{opacity: 0, height: 0}}
+                      transition={{duration: 0.25}}
+                      className="px-3.5 pb-3.5 pt-2 border-t border-[#36312E] space-y-3"
+                    >
+                      {/* Age Group Switcher (3-7, 8-12, 13-18) */}
+                      <div className="flex items-center gap-1 p-1 bg-[#1C1917] rounded-xl border border-[#36312E]">
+                        {(
+                          [
+                            {id: '3-7', label: 'Ages 3–7'},
+                            {id: '8-12', label: 'Ages 8–12'},
+                            {id: '13-18', label: 'Ages 13–18'},
+                          ] as const
+                        ).map((grp) => {
+                          const isSelected = sidebarPrayerAgeGroup === grp.id;
+                          return (
+                            <button
+                              key={grp.id}
+                              type="button"
+                              onClick={() => setSidebarPrayerAgeGroup(grp.id)}
+                              className={`flex-1 py-1 rounded-lg text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#D97706] text-[#1A1A1A]'
+                                  : 'text-[#A8A29E] hover:text-[#FAF7F2]'
+                              }`}
+                            >
+                              {grp.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Meditative Prayers for Selected Age Group */}
+                      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-0.5">
+                        {AGE_APPROPRIATE_MEDITATIVE_PRAYERS[sidebarPrayerAgeGroup].map(
+                          (prayerItem) => {
+                            const isFav = favoritePrayerIds.includes(prayerItem.id);
+                            return (
+                              <div
+                                key={prayerItem.id}
+                                className="p-2.5 rounded-xl bg-[#1C1917] border border-[#36312E] space-y-2"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <span className="text-[9.5px] font-mono uppercase tracking-wider text-[#FBBF24] block">
+                                      {prayerItem.scriptureAnchor} · {prayerItem.ageGroupLabel}
+                                    </span>
+                                    <div
+                                      className="text-xs font-semibold text-[#FAF7F2]"
+                                      style={{fontFamily: 'var(--font-display), serif'}}
+                                    >
+                                      {prayerItem.title}
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleToggleSidebarFavoritePrayer(
+                                        prayerItem.id,
+                                        prayerItem.title
+                                      )
+                                    }
+                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer shrink-0 ${
+                                      isFav
+                                        ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                                        : 'bg-[#24211E] text-[#FDE68A] border-[#D97706]/50 hover:bg-[#2E2925]'
+                                    }`}
+                                    title="Save to Favorites in localStorage"
+                                  >
+                                    <Star
+                                      className={`w-3 h-3 ${isFav ? 'fill-current' : ''}`}
+                                    />
+                                    <span>{isFav ? 'Favorited' : 'Save to Favorites'}</span>
+                                  </button>
+                                </div>
+
+                                <p
+                                  className="text-xs italic text-[#FAF7F2] leading-relaxed"
+                                  style={{fontFamily: 'var(--font-display), serif'}}
+                                >
+                                  “{prayerItem.prayerText}”
+                                </p>
+
+                                <p className="text-[10.5px] text-[#A8A29E] leading-snug">
+                                  <strong className="text-[#D97706]">Quiet Prompt:</strong>{' '}
+                                  {prayerItem.meditativePrompt}
+                                </p>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 text-[10.5px] text-[#A8A29E]">
+                        <span>Saved privately in localStorage</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsPrayerModalOpen(true)}
+                          className="text-[#FBBF24] hover:underline font-medium cursor-pointer"
+                        >
+                          Open Full Prayer Sanctuary →
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* ITEM 3: Growth History (Expandable Submenu) */}
@@ -993,23 +1224,23 @@ export default function SanctuaryDashboardBar({
                       className="px-3.5 pb-3.5 pt-1 border-t border-[#36312E] space-y-3"
                     >
                       {/* Sub-view switcher */}
-                      <div className="flex items-center gap-1.5 p-1 bg-[#1C1917] rounded-xl border border-[#36312E]">
+                      <div className="flex items-center gap-1 p-1 bg-[#1C1917] rounded-xl border border-[#36312E]">
                         <button
                           type="button"
                           onClick={() => setHistoryTab('recharts')}
-                          className={`flex-1 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                          className={`flex-1 py-1 rounded-lg text-[10.5px] font-semibold transition-colors cursor-pointer ${
                             historyTab === 'recharts'
                               ? 'bg-[#292524] text-[#FAF7F2] border border-[#44403C]'
                               : 'text-[#A8A29E] hover:text-[#FAF7F2]'
                           }`}
                         >
                           <Activity className="w-3 h-3 inline mr-1 text-[#D97706]" />
-                          Weekly Recharts
+                          Weekly
                         </button>
                         <button
                           type="button"
                           onClick={() => setHistoryTab('history')}
-                          className={`flex-1 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                          className={`flex-1 py-1 rounded-lg text-[10.5px] font-semibold transition-colors cursor-pointer ${
                             historyTab === 'history'
                               ? 'bg-[#292524] text-[#FAF7F2] border border-[#44403C]'
                               : 'text-[#A8A29E] hover:text-[#FAF7F2]'
@@ -1018,9 +1249,21 @@ export default function SanctuaryDashboardBar({
                           <TrendingUp className="w-3 h-3 inline mr-1 text-[#D97706]" />
                           D3 History
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setHistoryTab('pinned')}
+                          className={`flex-1 py-1 rounded-lg text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                            historyTab === 'pinned'
+                              ? 'bg-[#292524] text-[#FDE68A] border border-[#44403C]'
+                              : 'text-[#A8A29E] hover:text-[#FAF7F2]'
+                          }`}
+                        >
+                          <Pin className="w-3 h-3 inline mr-1 text-[#D97706]" />
+                          Pinned ({pinnedAffirmations.length})
+                        </button>
                       </div>
 
-                      {/* Render chosen chart */}
+                      {/* Render chosen chart or pinned affirmations */}
                       <div className="overflow-hidden rounded-xl border border-[#36312E] bg-[#141210] p-2">
                         {historyTab === 'recharts' ? (
                           <WeeklyEngagementRecharts
@@ -1029,12 +1272,52 @@ export default function SanctuaryDashboardBar({
                             weeklyCompleted={weeklyCompletedSessions}
                             onOpenShareModal={() => setIsShareModalOpen(true)}
                           />
-                        ) : (
+                        ) : historyTab === 'history' ? (
                           <GrowthHistoryD3Chart
                             currentPoints={growthPoints}
                             currentStage={currentStage}
                             onOpenShareModal={() => setIsShareModalOpen(true)}
                           />
+                        ) : (
+                          <div className="p-3 space-y-2.5 max-h-[220px] overflow-y-auto">
+                            {pinnedAffirmations.length === 0 ? (
+                              <div className="py-6 text-center space-y-1 text-xs text-[#A8A29E]">
+                                <Pin className="w-6 h-6 text-[#D97706]/40 mx-auto" />
+                                <p className="font-semibold text-[#FAF7F2]">No pinned affirmations yet.</p>
+                                <p className="text-[11px]">Pin daily faith reflections above to save them to your Growth History.</p>
+                              </div>
+                            ) : (
+                              pinnedAffirmations.map((aff) => (
+                                <div
+                                  key={aff.id}
+                                  className="p-3 rounded-xl bg-[#1C1917] border border-[#36312E] space-y-1.5"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[11px] font-mono font-bold text-[#FDE68A]">
+                                      {aff.scriptureReference} · {aff.theme}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handlePinAffirmation(aff)}
+                                      className="text-[#A8A29E] hover:text-rose-400 p-0.5 cursor-pointer"
+                                      title="Unpin"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                  <p
+                                    className="text-xs italic text-[#FAF7F2] leading-relaxed"
+                                    style={{fontFamily: 'var(--font-display), serif'}}
+                                  >
+                                    &ldquo;{aff.verse}&rdquo;
+                                  </p>
+                                  <p className="text-[10.5px] text-[#A8A29E] leading-snug">
+                                    Prompt: &ldquo;{aff.prompt}&rdquo;
+                                  </p>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         )}
                       </div>
 

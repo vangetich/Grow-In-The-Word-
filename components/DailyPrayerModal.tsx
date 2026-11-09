@@ -17,7 +17,98 @@ import {
   Filter,
   CheckCircle2,
   Clock,
+  Star,
+  BookmarkCheck,
+  Compass,
 } from 'lucide-react';
+
+export interface MeditativePrayerItem {
+  id: string;
+  ageGroup: '3-7' | '8-12' | '13-18';
+  ageGroupLabel: string;
+  title: string;
+  scriptureAnchor: string;
+  prayerText: string;
+  meditativePrompt: string;
+}
+
+export const AGE_APPROPRIATE_MEDITATIVE_PRAYERS: Record<
+  '3-7' | '8-12' | '13-18',
+  MeditativePrayerItem[]
+> = {
+  '3-7': [
+    {
+      id: 'meditative-bedtime-1',
+      ageGroup: '3-7',
+      ageGroupLabel: 'Ages 3–7 · Sanctuary Bedtime',
+      title: 'Under the Shepherd’s Stars',
+      scriptureAnchor: 'Psalm 4:8',
+      prayerText:
+        'Dear Lord, as night arrives and the quiet stars come out, I lay my head down knowing You hold the whole world with gentle hands. Thank You for keeping me safe today.',
+      meditativePrompt:
+        'Take three slow deep breaths. Imagine God tucking you in like a warm, peaceful blanket.',
+    },
+    {
+      id: 'meditative-bedtime-2',
+      ageGroup: '3-7',
+      ageGroupLabel: 'Ages 3–7 · Sanctuary Bedtime',
+      title: 'Good Shepherd Care',
+      scriptureAnchor: 'Psalm 23:1–2',
+      prayerText:
+        'Good Shepherd, thank You for watching over me while I play, learn, and rest. Help me sleep peacefully beside Your still waters tonight.',
+      meditativePrompt:
+        'Quietly whisper thank you for one happy thing that brought a smile to your face today.',
+    },
+  ],
+  '8-12': [
+    {
+      id: 'meditative-archive-1',
+      ageGroup: '8-12',
+      ageGroupLabel: 'Ages 8–12 · Ancient Archive',
+      title: 'Courage & Curiosity in Truth',
+      scriptureAnchor: 'Deuteronomy 31:6',
+      prayerText:
+        'Lord of history, as I explore the ancient stories of Your faithfulness, give me curiosity to ask honest questions and steady courage to walk in kindness with my friends.',
+      meditativePrompt:
+        'Pause for 10 quiet seconds. Ask God for calm courage in a decision or situation facing you tomorrow.',
+    },
+    {
+      id: 'meditative-archive-2',
+      ageGroup: '8-12',
+      ageGroupLabel: 'Ages 8–12 · Ancient Archive',
+      title: 'Light for Every Step',
+      scriptureAnchor: 'Psalm 119:105',
+      prayerText:
+        'God of wisdom, thank You that I don’t have to pretend to know everything. Guide my steps like a lamp on an ancient pathway and teach me to love truth.',
+      meditativePrompt:
+        'Picture an ancient oil lamp lighting up a stone path just one peaceful step at a time.',
+    },
+  ],
+  '13-18': [
+    {
+      id: 'meditative-harbor-1',
+      ageGroup: '13-18',
+      ageGroupLabel: 'Ages 13–18 · Safe Harbor',
+      title: 'Honest Harbor & Unshakable Grace',
+      scriptureAnchor: 'Psalm 130:1–2',
+      prayerText:
+        'Creator and Father, I bring You my real thoughts—the unspoken anxieties, the hard questions about the future, and my desire for authentic meaning. Thank You that Your grace does not demand fake certainty.',
+      meditativePrompt:
+        'Exhale the pressure to perform or impress others. Inhale quiet confidence that you are fully seen and loved.',
+    },
+    {
+      id: 'meditative-harbor-2',
+      ageGroup: '13-18',
+      ageGroupLabel: 'Ages 13–18 · Safe Harbor',
+      title: 'Justice, Mercy & Walking Humbly',
+      scriptureAnchor: 'Micah 6:8',
+      prayerText:
+        'Sovereign God, in a world full of noise and social pressure, anchor my heart in quiet mercy. Give me boldness to act justly, compassion to defend the lonely, and humility to walk with You.',
+      meditativePrompt:
+        'Reflect on one person in your school or life who could use a gesture of quiet kindness from you this week.',
+    },
+  ],
+};
 
 export type PrayerCategory =
   | 'Gratitude'
@@ -114,8 +205,10 @@ export default function DailyPrayerModal({
   isNightSanctuary = false,
 }: DailyPrayerModalProps) {
   const [prayers, setPrayers] = useState<DailyPrayerPetition[]>(INITIAL_SEEDED_PRAYERS);
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState<'3-7' | '8-12' | '13-18'>('8-12');
+  const [favoritePrayerIds, setFavoritePrayerIds] = useState<string[]>([]);
 
-  // Restore stored petitions from localStorage post-mount to guarantee identical SSR hydration
+  // Restore stored petitions and favorite prayers from localStorage post-mount to guarantee identical SSR hydration
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
@@ -124,19 +217,47 @@ export default function DailyPrayerModal({
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setPrayers(parsed);
-            return;
+          }
+        } else {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SEEDED_PRAYERS));
+        }
+
+        const storedFavs = localStorage.getItem('grow_in_the_word_favorite_prayers_v1');
+        if (storedFavs) {
+          const parsedFavs = JSON.parse(storedFavs);
+          if (Array.isArray(parsedFavs)) {
+            setFavoritePrayerIds(parsedFavs);
           }
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SEEDED_PRAYERS));
       } catch {
         // fallback
       }
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleToggleFavoritePrayer = useCallback(
+    (item: MeditativePrayerItem) => {
+      setFavoritePrayerIds((prev) => {
+        const exists = prev.includes(item.id);
+        const next = exists ? prev.filter((id) => id !== item.id) : [...prev, item.id];
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('grow_in_the_word_favorite_prayers_v1', JSON.stringify(next));
+          } catch {}
+        }
+        if (!exists && onPrayerAdded) {
+          onPrayerAdded(10, `Saved Daily Prayer to Favorites: “${item.title}” (${item.ageGroupLabel})`);
+        }
+        return next;
+      });
+    },
+    [onPrayerAdded]
+  );
+
   const [activeCategory, setActiveCategory] = useState<PrayerCategory>('Gratitude');
   const [prayerText, setPrayerText] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'active' | 'answered'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'active' | 'answered' | 'favorites'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [answeringPrayerId, setAnsweringPrayerId] = useState<string | null>(null);
   const [answerNote, setAnswerNote] = useState('');
@@ -418,6 +539,152 @@ export default function DailyPrayerModal({
 
             {/* Scrollable Content Body */}
             <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+              {/* Age-Appropriate Meditative Daily Prayers (Ages 3-7, 8-12, 13-18) */}
+              <div
+                className={`p-4 sm:p-5 rounded-2xl border space-y-4 ${
+                  isNightSanctuary
+                    ? 'bg-[#24211E]/80 border-[#36312E]'
+                    : 'bg-[#F2ECE1]/70 border-[#E5DEC9]'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-[#D97706] font-semibold">
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>Guided Meditative Daily Prayers</span>
+                    </div>
+                    <p
+                      className={`text-xs ${
+                        isNightSanctuary ? 'text-[#A8A29E]' : 'text-[#57534E]'
+                      }`}
+                    >
+                      Non-coercive, quiet prayers tailored to your developmental stage. Save favorites to your private vault.
+                    </p>
+                  </div>
+
+                  {/* Age Group Selector (3-7, 8-12, 13-18) */}
+                  <div
+                    role="tablist"
+                    aria-label="Select prayer age group"
+                    className={`inline-flex rounded-xl p-1 border self-start sm:self-auto ${
+                      isNightSanctuary
+                        ? 'bg-[#1C1917] border-[#36312E]'
+                        : 'bg-[#FAF7F2] border-[#E5DEC9]'
+                    }`}
+                  >
+                    {(
+                      [
+                        {id: '3-7', label: 'Ages 3–7'},
+                        {id: '8-12', label: 'Ages 8–12'},
+                        {id: '13-18', label: 'Ages 13–18'},
+                      ] as const
+                    ).map((grp) => {
+                      const isSelected = selectedAgeGroup === grp.id;
+                      return (
+                        <button
+                          key={grp.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={isSelected}
+                          onClick={() => setSelectedAgeGroup(grp.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#D97706] text-[#1A1A1A] shadow-xs'
+                              : isNightSanctuary
+                              ? 'text-[#A8A29E] hover:text-[#F9F6F0]'
+                              : 'text-[#57534E] hover:text-[#1C1917]'
+                          }`}
+                        >
+                          {grp.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Meditative Prayer Cards for Selected Age Group */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {AGE_APPROPRIATE_MEDITATIVE_PRAYERS[selectedAgeGroup].map((item) => {
+                    const isFavorited = favoritePrayerIds.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 transition-all ${
+                          isNightSanctuary
+                            ? 'bg-[#1C1917] border-[#36312E]'
+                            : 'bg-[#FAF7F2] border-[#E5DEC9]'
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[10px] font-mono uppercase tracking-wider text-[#D97706] block">
+                                {item.scriptureAnchor} · {item.ageGroupLabel}
+                              </span>
+                              <h3
+                                className="text-sm sm:text-base font-semibold mt-0.5"
+                                style={{fontFamily: 'var(--font-display), serif'}}
+                              >
+                                {item.title}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <p
+                            className="text-xs sm:text-sm italic leading-relaxed"
+                            style={{fontFamily: 'var(--font-display), serif'}}
+                          >
+                            “{item.prayerText}”
+                          </p>
+
+                          <div
+                            className={`p-2.5 rounded-lg border text-[11px] leading-snug ${
+                              isNightSanctuary
+                                ? 'bg-[#24211E] border-[#36312E] text-[#D6D3D1]'
+                                : 'bg-[#F2ECE1]/70 border-[#E5DEC9] text-[#44403C]'
+                            }`}
+                          >
+                            <strong className="text-[#D97706]">Meditative Pause:</strong>{' '}
+                            {item.meditativePrompt}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-current/10">
+                          <button
+                            type="button"
+                            onClick={() => setPrayerText(item.prayerText)}
+                            className="text-[11px] font-medium text-[#D97706] hover:underline cursor-pointer"
+                          >
+                            Use in Petition ↓
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFavoritePrayer(item)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                              isFavorited
+                                ? 'bg-[#D97706] text-[#1A1A1A] border-[#D97706]'
+                                : isNightSanctuary
+                                ? 'bg-[#24211E] text-[#FDE68A] border-[#D97706]/50 hover:bg-[#292524]'
+                                : 'bg-white text-[#92400E] border-[#D97706]/50 hover:bg-[#F2ECE1]'
+                            }`}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${
+                                isFavorited ? 'fill-current' : ''
+                              }`}
+                            />
+                            <span>
+                              {isFavorited ? 'Saved to Favorites' : 'Save to Favorites'}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Prayer Entry Form */}
               <form onSubmit={handleAddPrayer} className="space-y-4">
                 <div className="space-y-2">
@@ -508,7 +775,7 @@ export default function DailyPrayerModal({
                   </div>
 
                   {/* Filter Pills */}
-                  <div className="inline-flex rounded-xl p-1 bg-[#EAE4D5]/70 dark:bg-[#24211E] border border-[#E5DEC9] dark:border-[#36312E]">
+                  <div className="inline-flex flex-wrap rounded-xl p-1 bg-[#EAE4D5]/70 dark:bg-[#24211E] border border-[#E5DEC9] dark:border-[#36312E]">
                     <button
                       type="button"
                       onClick={() => setFilterTab('all')}
@@ -542,11 +809,77 @@ export default function DailyPrayerModal({
                     >
                       Answered ({answeredCount})
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilterTab('favorites')}
+                      className={`min-h-[36px] px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1 ${
+                        filterTab === 'favorites'
+                          ? 'bg-[#FAF7F2] dark:bg-[#292524] text-[#D97706] shadow-xs'
+                          : 'text-[#78716C] dark:text-[#A8A29E]'
+                      }`}
+                    >
+                      <Star className="w-3 h-3 text-[#D97706] fill-current" />
+                      <span>Favorites ({favoritePrayerIds.length})</span>
+                    </button>
                   </div>
                 </div>
 
+                {/* Favorite Guided Prayers List when filterTab === 'favorites' */}
+                {filterTab === 'favorites' && (
+                  <div className="space-y-3">
+                    {favoritePrayerIds.length === 0 ? (
+                      <div
+                        className={`p-8 rounded-2xl border text-center space-y-2 ${
+                          isNightSanctuary
+                            ? 'bg-[#24211E]/40 border-[#36312E] text-[#A8A29E]'
+                            : 'bg-[#F2ECE1]/60 border-[#E5DEC9] text-[#78716C]'
+                        }`}
+                      >
+                        <Star className="w-8 h-8 text-[#D97706]/50 mx-auto" />
+                        <p className="text-sm font-medium">No favorite guided prayers saved yet.</p>
+                        <p className="text-xs">
+                          Click &ldquo;Save to Favorites&rdquo; on any age-appropriate meditative prayer above to keep it here.
+                        </p>
+                      </div>
+                    ) : (
+                      Object.values(AGE_APPROPRIATE_MEDITATIVE_PRAYERS)
+                        .flat()
+                        .filter((item) => favoritePrayerIds.includes(item.id))
+                        .map((item) => (
+                          <div
+                            key={item.id}
+                            className={`p-4 rounded-xl border space-y-2 ${
+                              isNightSanctuary
+                                ? 'bg-[#24211E] border-[#36312E]'
+                                : 'bg-white border-[#E5DEC9]'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-mono font-semibold text-[#D97706]">
+                                {item.title} · {item.scriptureAnchor} ({item.ageGroupLabel})
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFavoritePrayer(item)}
+                                className="text-xs text-rose-500 hover:underline cursor-pointer"
+                              >
+                                Remove Favorite
+                              </button>
+                            </div>
+                            <p
+                              className="text-sm italic leading-relaxed"
+                              style={{fontFamily: 'var(--font-display), serif'}}
+                            >
+                              “{item.prayerText}”
+                            </p>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                )}
+
                 {/* Prayers List */}
-                {filteredPrayers.length === 0 ? (
+                {filterTab !== 'favorites' && filteredPrayers.length === 0 && (
                   <div
                     className={`p-8 rounded-2xl border text-center space-y-2 ${
                       isNightSanctuary
@@ -560,7 +893,9 @@ export default function DailyPrayerModal({
                       Take a quiet moment to record a petition or note of gratitude above.
                     </p>
                   </div>
-                ) : (
+                )}
+
+                {filterTab !== 'favorites' && filteredPrayers.length > 0 && (
                   <div className="space-y-3">
                     {filteredPrayers.map((prayer) => {
                       const isAnsweringThis = answeringPrayerId === prayer.id;

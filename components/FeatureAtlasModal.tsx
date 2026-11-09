@@ -362,7 +362,7 @@ export default function FeatureAtlasModal({
           onClick={onClose}
         >
           <motion.div
-            ref={modalFocusTrapRef}
+            ref={modalFocusTrapRef as React.RefObject<HTMLDivElement>}
             tabIndex={-1}
             initial={{ opacity: 0, scale: 0.94, y: 28 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

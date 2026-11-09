@@ -12,6 +12,7 @@ import {
   FamiliarityLevelId,
   computeCustomEntryLane,
 } from '@/lib/design-spec-data';
+import * as d3 from 'd3';
 import {
   Database,
   Lock,
@@ -37,11 +38,16 @@ import {
   Compass,
   Clock,
   Filter,
+  Info,
+  TrendingUp,
 } from 'lucide-react';
 
 export interface AdminBackendMaintenanceSectionProps {
   onOpenJourneyModal: (defaultTier?: 'bedtime' | 'archive' | 'harbor') => void;
   onEngageContent?: (points: number, label: string) => void;
+  engagementLog?: string[];
+  growthPoints?: number;
+  recentActivityLabel?: string;
 }
 
 export type AdminSectionId =
@@ -58,6 +64,291 @@ export interface MaintenanceLogEntry {
   severity: 'HEALTHY' | 'VERIFIED' | 'AUDIT';
   summary: string;
   detail: string;
+}
+
+export interface EngagementCsvRecord {
+  logId: string;
+  timestamp: string;
+  actionLabel: string;
+  category: string;
+  developmentalStage: string;
+  pointsAwarded: number;
+  cumulativePoints: number;
+  stagePointsBreakdown: string;
+  entryLaneContext: string;
+}
+
+const BASELINE_ENGAGEMENT_HISTORY: Array<{
+  timestampOffsetMinutes: number;
+  actionLabel: string;
+  category: string;
+  developmentalStage: string;
+  pointsAwarded: number;
+}> = [
+  {
+    timestampOffsetMinutes: 180,
+    actionLabel: 'Initialized Sanctuary Journey & Seed Calibration',
+    category: 'Onboarding & Routing',
+    developmentalStage: 'All Stages · 15-Year Arc',
+    pointsAwarded: 10,
+  },
+  {
+    timestampOffsetMinutes: 135,
+    actionLabel: 'Listened to Bedtime Shepherd Liturgy (Psalm 23 · Gentle Rest)',
+    category: 'Bedtime Sanctuary',
+    developmentalStage: 'Ages 3–7 · Childhood',
+    pointsAwarded: 10,
+  },
+  {
+    timestampOffsetMinutes: 95,
+    actionLabel: 'Explored Hebrew Lexical Root (Hesed · Steadfast Lovingkindness)',
+    category: 'Historical Archive',
+    developmentalStage: 'Ages 8–12 · Tweens',
+    pointsAwarded: 15,
+  },
+  {
+    timestampOffsetMinutes: 45,
+    actionLabel: 'Pinned Morning Daily Affirmation to Longitudinal Growth History',
+    category: 'Daily Affirmation',
+    developmentalStage: 'Ages 8–12 · Tweens',
+    pointsAwarded: 10,
+  },
+  {
+    timestampOffsetMinutes: 20,
+    actionLabel: 'Reflected in Safe Harbor Zero-Knowledge Vault (Habakkuk 1:2)',
+    category: 'Safe Harbor',
+    developmentalStage: 'Ages 13–18 · Teens',
+    pointsAwarded: 15,
+  },
+];
+
+export interface GrowthPointD3ChartProps {
+  data: EngagementCsvRecord[];
+}
+
+export function GrowthPointD3Chart({ data }: GrowthPointD3ChartProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [hoveredPoint, setHoveredPoint] = React.useState<{
+    x: number;
+    y: number;
+    record: EngagementCsvRecord;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (!containerRef.current || data.length === 0) return;
+
+    const container = containerRef.current;
+    d3.select(container).selectAll('svg').remove();
+
+    const width = container.clientWidth || 540;
+    const height = 185;
+    const margin = { top: 22, right: 28, bottom: 32, left: 38 };
+
+    const svg = d3
+      .select(container)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('class', 'overflow-visible');
+
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const g = svg
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // X Scale
+    const xScale = d3
+      .scaleLinear()
+      .domain([0, Math.max(data.length - 1, 1)])
+      .range([0, innerWidth]);
+
+    // Y Scale
+    const maxVal = d3.max(data, (d) => d.cumulativePoints) || 100;
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, Math.max(maxVal * 1.15, 20)])
+      .nice()
+      .range([innerHeight, 0]);
+
+    // Horizontal Gridlines
+    const yGrid = d3
+      .axisLeft(yScale)
+      .ticks(4)
+      .tickSize(-innerWidth)
+      .tickFormat(() => '');
+
+    g.append('g')
+      .attr('class', 'gridline')
+      .call(yGrid)
+      .selectAll('line')
+      .attr('stroke', '#292524')
+      .attr('stroke-dasharray', '3,3');
+    g.selectAll('.gridline .domain').remove();
+
+    // Axes
+    const xAxis = d3
+      .axisBottom(xScale)
+      .ticks(Math.min(data.length, 7))
+      .tickFormat((i) => {
+        const item = data[Number(i)];
+        return item ? item.logId : '';
+      });
+
+    const yAxis = d3.axisLeft(yScale).ticks(4);
+
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(xAxis)
+      .attr('color', '#A8A29E')
+      .selectAll('text')
+      .style('font-family', 'var(--font-mono), monospace')
+      .style('font-size', '10px');
+
+    g.append('g')
+      .call(yAxis)
+      .attr('color', '#A8A29E')
+      .selectAll('text')
+      .style('font-family', 'var(--font-mono), monospace')
+      .style('font-size', '10px');
+
+    // Gradient Defs
+    const defs = svg.append('defs');
+    const gradient = defs
+      .append('linearGradient')
+      .attr('id', 'd3-growth-trend-gradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%');
+
+    gradient
+      .append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#D97706')
+      .attr('stop-opacity', 0.38);
+
+    gradient
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#D97706')
+      .attr('stop-opacity', 0.02);
+
+    // Area Generator
+    const areaGenerator = d3
+      .area<EngagementCsvRecord>()
+      .x((_, i) => xScale(i))
+      .y0(innerHeight)
+      .y1((d) => yScale(d.cumulativePoints))
+      .curve(d3.curveMonotoneX);
+
+    g.append('path')
+      .datum(data)
+      .attr('fill', 'url(#d3-growth-trend-gradient)')
+      .attr('d', areaGenerator);
+
+    // Line Generator
+    const lineGenerator = d3
+      .line<EngagementCsvRecord>()
+      .x((_, i) => xScale(i))
+      .y((d) => yScale(d.cumulativePoints))
+      .curve(d3.curveMonotoneX);
+
+    g.append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', '#D97706')
+      .attr('stroke-width', 2.5)
+      .attr('d', lineGenerator);
+
+    // Circles & Interactive Hits
+    const dots = g
+      .selectAll('.data-circle-group')
+      .data(data)
+      .enter()
+      .append('g')
+      .attr('class', 'data-circle-group')
+      .attr('transform', (d, i) => `translate(${xScale(i)},${yScale(d.cumulativePoints)})`);
+
+    dots
+      .append('circle')
+      .attr('r', 4.5)
+      .attr('fill', '#FBBF24')
+      .attr('stroke', '#1C1917')
+      .attr('stroke-width', 1.8)
+      .style('cursor', 'pointer');
+
+    dots
+      .append('circle')
+      .attr('r', 14)
+      .attr('fill', 'transparent')
+      .style('cursor', 'pointer')
+      .on('mouseenter', (event, d) => {
+        const [mx, my] = d3.pointer(event, container);
+        setHoveredPoint({ x: mx, y: my, record: d });
+      })
+      .on('mouseleave', () => {
+        setHoveredPoint(null);
+      });
+
+  }, [data]);
+
+  return (
+    <div className="relative w-full space-y-2 p-4 rounded-2xl bg-[#141210] border border-[#292524]">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-[#FBBF24]">
+        <div className="flex items-center gap-2 font-semibold">
+          <TrendingUp className="w-4 h-4 text-[#D97706]" />
+          <span>D3 Growth Point Progression Trend ({data.length} Session Events)</span>
+        </div>
+        <span className="text-[11px] text-[#A8A29E]">
+          Hover data points for timestamps, growth counts &amp; stage breakdowns
+        </span>
+      </div>
+
+      <div
+        ref={containerRef}
+        className="relative w-full h-[185px] bg-[#1C1917] rounded-xl border border-[#292524] p-2 overflow-visible"
+      >
+        {/* Interactive Floating Hover Tooltip */}
+        <AnimatePresence>
+          {hoveredPoint && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.15 }}
+              className="absolute z-40 pointer-events-none p-3 rounded-xl bg-[#141210] border border-[#D97706] text-xs text-[#FAF7F2] shadow-2xl space-y-1 max-w-[280px]"
+              style={{
+                left: Math.min(Math.max(hoveredPoint.x - 120, 10), 250),
+                top: Math.max(hoveredPoint.y - 120, 10),
+              }}
+            >
+              <div className="flex items-center justify-between text-[10.5px] font-mono text-[#FBBF24] border-b border-[#292524] pb-1">
+                <span className="font-bold">{hoveredPoint.record.logId}</span>
+                <span className="text-[#A8A29E]">{hoveredPoint.record.timestamp}</span>
+              </div>
+              <div className="font-semibold text-[#FAF7F2] text-xs leading-snug">
+                {hoveredPoint.record.actionLabel}
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-mono pt-0.5">
+                <span className="text-[#34D399] font-bold">
+                  +{hoveredPoint.record.pointsAwarded} Pts (Total: {hoveredPoint.record.cumulativePoints})
+                </span>
+                <span className="text-[#A7F3D0] text-[10px]">
+                  {hoveredPoint.record.category}
+                </span>
+              </div>
+              <div className="text-[10px] font-mono text-[#FDE68A] pt-1 border-t border-[#292524]/80">
+                {hoveredPoint.record.stagePointsBreakdown}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 }
 
 const INITIAL_MAINTENANCE_LOGS: MaintenanceLogEntry[] = [
@@ -106,6 +397,9 @@ const INITIAL_MAINTENANCE_LOGS: MaintenanceLogEntry[] = [
 export default function AdminBackendMaintenanceSection({
   onOpenJourneyModal,
   onEngageContent,
+  engagementLog = [],
+  growthPoints = 38,
+  recentActivityLabel = 'Exploring the Sanctuary',
 }: AdminBackendMaintenanceSectionProps) {
   // Password-protection & 'Admin Mode' toggle state
   const [adminModeEnabled, setAdminModeEnabled] = useState<boolean>(false);
@@ -138,6 +432,13 @@ export default function AdminBackendMaintenanceSection({
     'All 9 Deterministic Entry Lanes & SQLite Offline Caches Healthy'
   );
   const [copiedFullSpec, setCopiedFullSpec] = useState<boolean>(false);
+  const [exportedCsvNotice, setExportedCsvNotice] = useState<string | null>(
+    null
+  );
+  const [csvExportStatus, setCsvExportStatus] = useState<
+    'idle' | 'generating' | 'complete'
+  >('idle');
+  const [copiedCsv, setCopiedCsv] = useState<boolean>(false);
 
   const simLane = computeCustomEntryLane(simAge, simFamiliarity);
   const simBirthYear = 2026 - simAge;
@@ -251,6 +552,254 @@ export default function AdminBackendMaintenanceSection({
     }
   };
 
+  // Infer category & developmental stage from an engagement log label
+  const classifyEngagementAction = (
+    label: string
+  ): {category: string; developmentalStage: string; points: number} => {
+    const lower = label.toLowerCase();
+    if (lower.includes('prayer')) {
+      return {
+        category: 'Daily Prayer',
+        developmentalStage:
+          lower.includes('3–7') || lower.includes('3-7')
+            ? 'Ages 3–7 · Childhood'
+            : lower.includes('13–18') || lower.includes('13-18')
+            ? 'Ages 13–18 · Teens'
+            : 'Ages 8–12 · Tweens',
+        points: 10,
+      };
+    }
+    if (lower.includes('affirmation')) {
+      return {
+        category: 'Daily Affirmation',
+        developmentalStage: 'All Stages · Sanctuary',
+        points: 10,
+      };
+    }
+    if (lower.includes('milestone') || lower.includes('celebrated')) {
+      return {
+        category: 'Milestone Celebration',
+        developmentalStage:
+          lower.includes('3–7') || lower.includes('bedtime')
+            ? 'Ages 3–7 · Childhood'
+            : lower.includes('13–18') || lower.includes('harbor')
+            ? 'Ages 13–18 · Teens'
+            : 'Ages 8–12 · Tweens',
+        points: 15,
+      };
+    }
+    if (
+      lower.includes('archive') ||
+      lower.includes('hebrew') ||
+      lower.includes('greek') ||
+      lower.includes('lexicon')
+    ) {
+      return {
+        category: 'Historical Archive',
+        developmentalStage: 'Ages 8–12 · Tweens',
+        points: 10,
+      };
+    }
+    if (
+      lower.includes('harbor') ||
+      lower.includes('vault') ||
+      lower.includes('teen')
+    ) {
+      return {
+        category: 'Safe Harbor',
+        developmentalStage: 'Ages 13–18 · Teens',
+        points: 15,
+      };
+    }
+    if (lower.includes('bedtime') || lower.includes('shepherd')) {
+      return {
+        category: 'Bedtime Sanctuary',
+        developmentalStage: 'Ages 3–7 · Childhood',
+        points: 10,
+      };
+    }
+    if (
+      lower.includes('admin') ||
+      lower.includes('diagnostic') ||
+      lower.includes('csv')
+    ) {
+      return {
+        category: 'Admin & Analytics',
+        developmentalStage: `Age ${simAge} · ${simLane.tierName}`,
+        points: 5,
+      };
+    }
+    return {
+      category: 'Scripture Formation',
+      developmentalStage: `Age ${simAge} · ${simLane.tierName}`,
+      points: 5,
+    };
+  };
+
+  // Build structured longitudinal engagement records combining baseline & live session engagementLog
+  const baseTimeMs = new Date('2026-11-09T15:00:00Z').getTime();
+  const chronologicalSessionActions = [...engagementLog].reverse();
+  const combinedRawEngagement = [
+    ...BASELINE_ENGAGEMENT_HISTORY.map((item) => ({
+      timestamp:
+        new Date(baseTimeMs - item.timestampOffsetMinutes * 60 * 1000)
+          .toISOString()
+          .replace('T', ' ')
+          .slice(0, 19) + ' UTC',
+      actionLabel: item.actionLabel,
+      category: item.category,
+      developmentalStage: item.developmentalStage,
+      pointsAwarded: item.pointsAwarded,
+    })),
+    ...chronologicalSessionActions.map((action, idx) => {
+      const meta = classifyEngagementAction(action);
+      return {
+        timestamp:
+          new Date(baseTimeMs + (idx + 1) * 60 * 1000)
+            .toISOString()
+            .replace('T', ' ')
+            .slice(0, 19) + ' UTC',
+        actionLabel: action,
+        category: meta.category,
+        developmentalStage: meta.developmentalStage,
+        pointsAwarded: meta.points,
+      };
+    }),
+  ];
+
+  let runningPointsTotal = 0;
+  let bedtimePts = 0;
+  let archivePts = 0;
+  let harborPts = 0;
+
+  const engagementCsvRecords: EngagementCsvRecord[] = combinedRawEngagement
+    .map((row, index) => {
+      runningPointsTotal += row.pointsAwarded;
+
+      const lowerCat = (row.category + ' ' + row.developmentalStage).toLowerCase();
+      if (
+        lowerCat.includes('bedtime') ||
+        lowerCat.includes('childhood') ||
+        lowerCat.includes('3–7') ||
+        lowerCat.includes('3-7')
+      ) {
+        bedtimePts += row.pointsAwarded;
+      } else if (
+        lowerCat.includes('harbor') ||
+        lowerCat.includes('teen') ||
+        lowerCat.includes('13–18') ||
+        lowerCat.includes('13-18') ||
+        lowerCat.includes('vault')
+      ) {
+        harborPts += row.pointsAwarded;
+      } else {
+        archivePts += row.pointsAwarded;
+      }
+
+      const stageBreakdownStr = `Bedtime: ${bedtimePts} pts | Archive: ${archivePts} pts | Harbor: ${harborPts} pts`;
+
+      return {
+        logId: `ENG-${String(index + 1).padStart(3, '0')}`,
+        timestamp: row.timestamp,
+        actionLabel: row.actionLabel,
+        category: row.category,
+        developmentalStage: row.developmentalStage,
+        pointsAwarded: row.pointsAwarded,
+        cumulativePoints: runningPointsTotal,
+        stagePointsBreakdown: stageBreakdownStr,
+        entryLaneContext: simLane.laneCode,
+      };
+    })
+    .reverse();
+
+  const escapeCsvCell = (value: string | number): string => {
+    const str = String(value ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const generateEngagementCsvContent = (): string => {
+    const headers = [
+      'Log ID',
+      'Timestamp (UTC)',
+      'Action / Reflection Event',
+      'Formation Category',
+      'Developmental Stage',
+      'Points Awarded',
+      'Cumulative Growth Points',
+      'Stage Breakdown (Bedtime/Archive/Harbor)',
+      'Assigned Entry Lane',
+    ];
+    const rows = engagementCsvRecords.map((rec) =>
+      [
+        rec.logId,
+        rec.timestamp,
+        rec.actionLabel,
+        rec.category,
+        rec.developmentalStage,
+        `+${rec.pointsAwarded}`,
+        rec.cumulativePoints,
+        rec.stagePointsBreakdown,
+        rec.entryLaneContext,
+      ]
+        .map(escapeCsvCell)
+        .join(',')
+    );
+    return [headers.map(escapeCsvCell).join(','), ...rows].join('\n');
+  };
+
+  const handleExportEngagementCsv = () => {
+    setCsvExportStatus('generating');
+    const csvContent = generateEngagementCsvContent();
+    const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const isoDateStamp = new Date().toISOString().split('T')[0];
+    const fileName = `engagement-log-${isoDateStamp}.csv`;
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const nowStr =
+      new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+    setMaintenanceLogs((prev) => [
+      {
+        id: `log-csv-${prev.length + 1}`,
+        timestamp: nowStr,
+        subsystem: 'SQLITE_VAult',
+        severity: 'AUDIT',
+        summary: `Exported User Engagement Log CSV (${fileName} · ${engagementCsvRecords.length} rows) for long-term growth analysis`,
+        detail: `Generated RFC-4180 CSV snapshot (${fileName}) containing engagement logs and growth point history for the current session (${growthPoints} pts; Active Lane: ${simLane.laneCode}).`,
+      },
+      ...prev,
+    ]);
+    setCsvExportStatus('complete');
+    setExportedCsvNotice(
+      `CSV Export Complete: Downloaded ${fileName} (${engagementCsvRecords.length} session engagement & growth history records)`
+    );
+    setTimeout(() => {
+      setExportedCsvNotice(null);
+    }, 6000);
+    onEngageContent?.(
+      5,
+      'Exported User Engagement Log (.csv) for Long-Term Growth Analysis'
+    );
+  };
+
+  const handleCopyEngagementCsv = () => {
+    const csvContent = generateEngagementCsvContent();
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(csvContent);
+      setCopiedCsv(true);
+      setTimeout(() => setCopiedCsv(false), 2500);
+    }
+  };
+
   const handleAdminSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminEmail.trim() || !adminPasscode.trim()) {
@@ -341,8 +890,79 @@ export default function AdminBackendMaintenanceSection({
             </p>
           </div>
 
-          {/* Admin Mode Toggle & Password Wall Trigger */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {/* Admin Mode Toggle, CSV Export Trigger & Status Indicator, and Password Wall Trigger */}
+          <div className="flex flex-col items-start lg:items-end gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Visual Button to Trigger Engagement Log CSV Export + Small Completion Status Indicator + Tooltip */}
+              <div className="inline-flex items-center gap-2 p-1 pr-2.5 rounded-xl bg-[#141210] border border-[#36312E]">
+                <button
+                  type="button"
+                  onClick={handleExportEngagementCsv}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#D97706] hover:bg-[#F59E0B] text-[#141210] text-xs font-mono font-semibold transition-colors cursor-pointer shadow-xs"
+                  title="Exports engagement-log-YYYY-MM-DD.csv containing engagement logs and growth point history for the current session"
+                >
+                  {csvExportStatus === 'generating' ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>Export Engagement Log (.csv)</span>
+                </button>
+
+                {/* Small Status Indicator showing CSV readiness / completion */}
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-mono px-2 py-1 rounded-md border transition-colors ${
+                    csvExportStatus === 'complete'
+                      ? 'bg-[#064E3B]/50 border-[#10B981]/50 text-[#34D399]'
+                      : csvExportStatus === 'generating'
+                      ? 'bg-[#D97706]/20 border-[#D97706]/50 text-[#FBBF24]'
+                      : 'bg-[#1C1917] border-[#292524] text-[#A8A29E]'
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      csvExportStatus === 'complete'
+                        ? 'bg-[#34D399]'
+                        : csvExportStatus === 'generating'
+                        ? 'bg-[#FBBF24] animate-pulse'
+                        : 'bg-[#D97706]'
+                    }`}
+                  />
+                  <span>
+                    {csvExportStatus === 'complete'
+                      ? `CSV Complete (${engagementCsvRecords.length} rows)`
+                      : csvExportStatus === 'generating'
+                      ? 'Generating CSV…'
+                      : `Ready (${engagementCsvRecords.length} rows)`}
+                  </span>
+                </span>
+
+                {/* Non-Intrusive Instruction Tooltip Trigger */}
+                <div className="relative group inline-flex items-center">
+                  <button
+                    type="button"
+                    aria-label="CSV export contents information"
+                    title="The exported CSV (engagement-log-YYYY-MM-DD.csv) includes engagement logs and growth point history for the current session."
+                    className="p-1 rounded-md text-[#A8A29E] hover:text-[#FBBF24] focus:outline-none focus:ring-1 focus:ring-[#D97706] cursor-help"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2 w-72 p-2.5 rounded-xl bg-[#1C1917] border border-[#D97706]/50 text-[11px] text-[#E7E5E4] leading-relaxed shadow-xl z-30"
+                  >
+                    Exports{' '}
+                    <span className="font-mono text-[#FBBF24]">
+                      engagement-log-YYYY-MM-DD.csv
+                    </span>{' '}
+                    with all engagement logs and cumulative growth point history
+                    recorded during the current session.
+                  </div>
+                </div>
+              </div>
+
             {/* Direct Admin Mode Toggle Switch */}
             <button
               type="button"
@@ -365,30 +985,46 @@ export default function AdminBackendMaintenanceSection({
               </span>
             </button>
 
-            {!adminModeEnabled ? (
-              <button
-                type="button"
-                onClick={() => setShowAuthPrompt((prev) => !prev)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D97706] hover:bg-[#F59E0B] text-[#1A1A1A] text-xs font-semibold transition-colors cursor-pointer"
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>
-                  {showAuthPrompt ? 'Hide Password Prompt' : 'Enter Admin Password'}
-                </span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminModeEnabled(false);
-                  setShowAuthPrompt(false);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#292524] hover:bg-[#36312E] border border-[#44403C] text-xs font-semibold text-[#FAF7F2] transition-colors cursor-pointer"
-              >
-                <Lock className="w-3.5 h-3.5 text-[#D97706]" />
-                <span>Lock Admin Wall</span>
-              </button>
-            )}
+              {!adminModeEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPrompt((prev) => !prev)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#292524] hover:bg-[#36312E] border border-[#44403C] text-[#FAF7F2] text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-[#D97706]" />
+                  <span>
+                    {showAuthPrompt
+                      ? 'Hide Password Prompt'
+                      : 'Enter Admin Password'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminModeEnabled(false);
+                    setShowAuthPrompt(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#292524] hover:bg-[#36312E] border border-[#44403C] text-xs font-semibold text-[#FAF7F2] transition-colors cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5 text-[#D97706]" />
+                  <span>Lock Admin Wall</span>
+                </button>
+              )}
+            </div>
+
+            {/* Brief, non-intrusive instruction text explaining CSV export contents & ISO filename */}
+            <p className="text-[11px] font-mono text-[#A8A29E] flex items-center gap-1.5">
+              <Info className="w-3 h-3 text-[#D97706] shrink-0" />
+              <span>
+                Exported CSV (
+                <code className="text-[#FDE68A]">
+                  engagement-log-YYYY-MM-DD.csv
+                </code>
+                ) includes engagement logs and growth point history for the
+                current session.
+              </span>
+            </p>
           </div>
         </div>
 
@@ -615,8 +1251,37 @@ export default function AdminBackendMaintenanceSection({
                       <Download className="w-3.5 h-3.5 text-[#D97706]" />
                       <span>Export .md</span>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportEngagementCsv}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D97706] hover:bg-[#F59E0B] text-xs font-mono font-semibold text-[#141210] transition-colors cursor-pointer shadow-xs"
+                      title="Export longitudinal user engagement log as a CSV file for growth analysis"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export Engagement Log (.csv)</span>
+                    </button>
                   </div>
                 </div>
+
+                {exportedCsvNotice && (
+                  <div
+                    role="status"
+                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-[#064E3B]/40 border border-[#10B981]/50 text-xs font-mono text-[#A7F3D0]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#34D399] shrink-0" />
+                      <span>{exportedCsvNotice}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setExportedCsvNotice(null)}
+                      className="text-[11px] text-[#A7F3D0] hover:text-white underline cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
 
                 {/* Shared Live Telemetry & Entry Lane Simulator Bar */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
@@ -1173,7 +1838,7 @@ export default function AdminBackendMaintenanceSection({
                 )}
 
                 {/* --------------------------------------------------------------- */}
-                {/* CATEGORY 03: MAINTENANCE LOGS & SYSTEM DIAGNOSTICS              */}
+                {/* CATEGORY 03: MAINTENANCE LOGS & USER ENGAGEMENT CSV EXPORT      */}
                 {/* --------------------------------------------------------------- */}
                 {(layoutMode === 'grid' ||
                   activeAdminTab === 'maintenance-logs') && (
@@ -1184,6 +1849,121 @@ export default function AdminBackendMaintenanceSection({
                         : 'rounded-2xl bg-[#1C1917] text-[#FAF7F2] border border-[#36312E] p-6 sm:p-8 space-y-6'
                     }
                   >
+                    {/* User Engagement Log & Long-Term Growth CSV Export Panel */}
+                    <div className="p-5 rounded-2xl bg-[#141210] border border-[#D97706]/40 space-y-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[#292524]">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-xs font-mono text-[#FBBF24]">
+                            <FileText className="w-4 h-4 text-[#D97706]" />
+                            <span>
+                              Long-Term Growth Analysis · User Engagement Log
+                              Export
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#A8A29E] leading-relaxed">
+                            The exported CSV (
+                            <code className="text-[#FDE68A] font-mono">
+                              engagement-log-YYYY-MM-DD.csv
+                            </code>
+                            ) includes all engagement logs, cumulative growth
+                            point history, and stage breakdowns (Bedtime/Archive/Harbor)
+                            for the current session (
+                            {engagementCsvRecords.length} events ·{' '}
+                            {growthPoints} Growth Pts · Latest:{' '}
+                            <span className="text-[#FAF7F2]">
+                              {recentActivityLabel}
+                            </span>
+                            ).
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={handleExportEngagementCsv}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D97706] hover:bg-[#F59E0B] text-[#141210] text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Export Engagement Log (.csv)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleCopyEngagementCsv}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#292524] hover:bg-[#36312E] border border-[#44403C] text-[#FAF7F2] text-xs font-mono transition-colors cursor-pointer"
+                          >
+                            {copiedCsv ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-[#34D399]" />
+                                <span>CSV Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-[#FBBF24]" />
+                                <span>Copy CSV</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* D3 Growth Point Progression Trend Line Chart with Interactive Tooltips */}
+                      <GrowthPointD3Chart
+                        data={[...engagementCsvRecords].reverse()}
+                      />
+
+                      {/* Preview Table of Exportable Engagement Log Rows */}
+                      <div className="overflow-x-auto max-h-56 overflow-y-auto rounded-xl border border-[#292524]">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead className="sticky top-0 bg-[#1C1917] text-[#A8A29E] font-mono text-[11px] border-b border-[#292524]">
+                            <tr>
+                              <th className="py-2 px-3">ID</th>
+                              <th className="py-2 px-3">Timestamp</th>
+                              <th className="py-2 px-3">
+                                Engagement / Reflection Event
+                              </th>
+                              <th className="py-2 px-3">Category</th>
+                              <th className="py-2 px-3">Stage</th>
+                              <th className="py-2 px-3">
+                                Stage Breakdown (Bedtime/Archive/Harbor)
+                              </th>
+                              <th className="py-2 px-3 text-right">Pts</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#292524]">
+                            {engagementCsvRecords.map((rec) => (
+                              <tr
+                                key={rec.logId}
+                                className="bg-[#141210] hover:bg-[#292524]/50 text-[#D6D3D1]"
+                              >
+                                <td className="py-2 px-3 font-mono text-[11px] text-[#FBBF24] whitespace-nowrap">
+                                  {rec.logId}
+                                </td>
+                                <td className="py-2 px-3 font-mono text-[11px] text-[#A8A29E] whitespace-nowrap">
+                                  {rec.timestamp}
+                                </td>
+                                <td className="py-2 px-3 text-[#FAF7F2]">
+                                  {rec.actionLabel}
+                                </td>
+                                <td className="py-2 px-3 font-mono text-[11px] text-[#A7F3D0] whitespace-nowrap">
+                                  {rec.category}
+                                </td>
+                                <td className="py-2 px-3 text-[11px] text-[#A8A29E] whitespace-nowrap">
+                                  {rec.developmentalStage}
+                                </td>
+                                <td className="py-2 px-3 font-mono text-[10.5px] text-[#FDE68A] whitespace-nowrap">
+                                  {rec.stagePointsBreakdown}
+                                </td>
+                                <td className="py-2 px-3 font-mono text-[11px] text-[#34D399] text-right whitespace-nowrap">
+                                  +{rec.pointsAwarded} ({rec.cumulativePoints})
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#292524]">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-xs font-mono text-[#FBBF24]">

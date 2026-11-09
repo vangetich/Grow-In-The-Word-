@@ -11,7 +11,11 @@ export interface ColorToken {
 }
 
 export interface HeroCopyVariant {
-  id: 'flagship' | 'intellectual-trust' | 'family-rhythm';
+  id:
+    | 'flagship'
+    | 'intellectual-trust'
+    | 'family-rhythm'
+    | 'ancient-horizon';
   label: string;
   focusPillar: string;
   kicker: string;
@@ -720,6 +724,18 @@ export const HERO_COPY_VARIANTS: HeroCopyVariant[] = [
       'Built for families who want more than loud cartoons and easy clichés. Grow In The Word evolves across fifteen formative years—offering soothing bedtime psalms for little ones, interactive ancient history for tweens, and a trusted harbor for teens to wrestle with real faith.',
     copywriterRationale:
       'Directly contrasts the app against noisy digital alternatives while mapping the three developmental stages inside the sub-headline for immediate clarity.',
+  },
+  {
+    id: 'ancient-horizon',
+    label: 'Grow In The Word · Living History & Owned Faith',
+    focusPillar: 'Bridges Primary-Source Antiquity with Personal Formation',
+    kicker: 'AN OPEN SPACE FOR ANCIENT HISTORY & REAL LIFE',
+    headline:
+      'Ancient wisdom for young minds. Honest harbor for searching hearts.',
+    subHeadline:
+      'From gentle nighttime liturgies in early childhood to primary-source archaeology and zero-surveillance teen reflection—a scripture companion that honors every question across fifteen years of growth.',
+    copywriterRationale:
+      'Completes the four-part rolling hero cadence by connecting ancient historical authenticity with psychological safety for searching youth.',
   },
 ];
 

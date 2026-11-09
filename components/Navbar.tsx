@@ -79,15 +79,21 @@ export default function Navbar({
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#F9F6F0] backdrop-blur-md border-b border-[#E5DEC9] transition-colors duration-500">
+    <header
+      className="sticky top-0 z-40 bg-[#F8F5EE] !text-[#141210] backdrop-blur-md border-b border-[#E5DEC9] transition-colors duration-500"
+      style={{backgroundColor: '#F9F6F0', color: '#141210'}}
+    >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
         {/* Main Navbar Top Row */}
         <div className="flex items-center justify-between gap-3 sm:gap-5 py-3 sm:py-3.5">
-          {/* Zone 1: Brand Wordmark */}
+          {/* Zone 1: Brand Wordmark — Consistently renders in a dark color scheme regardless of Night Sanctuary state */}
           <Link
             href="/"
-            className="text-lg sm:text-2xl font-bold tracking-tight text-[#1C1917] dark:text-[#FAF7F2] whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D97706]"
-            style={{fontFamily: 'var(--font-display), serif'}}
+            className="text-lg sm:text-2xl font-bold tracking-tight !text-[#141210] hover:!text-[#292524] whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D97706]"
+            style={{
+              fontFamily: 'var(--font-display), serif',
+              color: '#141210',
+            }}
           >
             Grow In The Word
           </Link>
@@ -100,7 +106,7 @@ export default function Navbar({
                 type="button"
                 onClick={slideLeft}
                 aria-label="Slide navigation items left"
-                className="absolute left-0 z-10 w-7 h-7 rounded-full bg-[#FAF7F2] dark:bg-[#292524] border border-[#E5DEC9] dark:border-[#36312E] text-[#1C1917] dark:text-[#FAF7F2] shadow-sm flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                className="absolute left-0 z-10 w-7 h-7 rounded-full bg-[#FAF7F2] border border-[#E5DEC9] text-[#1C1917] shadow-sm flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -111,55 +117,55 @@ export default function Navbar({
               ref={scrollContainerRef}
               onScroll={checkScroll}
               aria-label="Primary Horizontal Navigation"
-              className="flex items-center gap-4 overflow-x-auto scrollbar-none scroll-smooth px-6 py-1 text-sm font-medium text-[#57534E] dark:text-[#D6D3D1] whitespace-nowrap touch-pan-x"
+              className="flex items-center gap-4 overflow-x-auto scrollbar-none scroll-smooth px-6 py-1 text-sm font-medium text-[#44403C] whitespace-nowrap touch-pan-x"
               style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}
             >
               <a
                 href="#how-to-use"
-                className="text-[#92400E] dark:text-[#FBBF24] font-semibold hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="text-[#92400E] font-semibold hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 How to Use
               </a>
               <Link
                 href="/bible-reader"
-                className="inline-flex items-center gap-1.5 text-[#92400E] dark:text-[#FBBF24] font-semibold hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="inline-flex items-center gap-1.5 text-[#92400E] font-semibold hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 <BookOpen className="w-3.5 h-3.5 text-[#D97706]" />
                 <span>Full-Page Bible</span>
               </Link>
               <a
                 href="#three-tier-grid"
-                className="hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 Three-Tier Preview
               </a>
               <a
                 href="#growth-seed-tracker"
-                className="text-[#92400E] dark:text-[#FBBF24] font-semibold hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="text-[#92400E] font-semibold hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 Growth Seed Tracker
               </a>
               <a
                 href="#phase-3-archive"
-                className="hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 Ancient Archive
               </a>
               <a
                 href="#phase-4-harbor"
-                className="hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 Safe Harbor
               </a>
               <a
                 href="#our-mission"
-                className="hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 Our Mission
               </a>
               <a
                 href="#testimonials"
-                className="hover:text-[#1C1917] dark:hover:text-[#FAF7F2] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
+                className="hover:text-[#1C1917] hover:underline underline-offset-8 decoration-[#D97706] transition-colors py-1 shrink-0"
               >
                 Testimonials
               </a>
@@ -171,7 +177,7 @@ export default function Navbar({
                 type="button"
                 onClick={slideRight}
                 aria-label="Slide navigation items right"
-                className="absolute right-0 z-10 w-7 h-7 rounded-full bg-[#FAF7F2] dark:bg-[#292524] border border-[#E5DEC9] dark:border-[#36312E] text-[#1C1917] dark:text-[#FAF7F2] shadow-sm flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                className="absolute right-0 z-10 w-7 h-7 rounded-full bg-[#FAF7F2] border border-[#E5DEC9] text-[#1C1917] shadow-sm flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -184,7 +190,7 @@ export default function Navbar({
             <div className="hidden sm:flex items-center gap-2">
               <Link
                 href="/bible-reader"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border bg-[#D97706]/15 text-[#92400E] dark:text-[#FBBF24] border-[#D97706]/50 hover:bg-[#D97706] hover:text-[#1A1A1A] transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border bg-[#D97706]/15 text-[#92400E] border-[#D97706]/50 hover:bg-[#D97706] hover:text-[#1A1A1A] transition-all whitespace-nowrap shrink-0 cursor-pointer"
                 title="Read the Bible in Full-Page Form (AKJV · AMP · NASB · NIV · NLT)"
               >
                 <BookOpen className="w-3.5 h-3.5 text-[#D97706]" />
@@ -199,7 +205,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={onOpenFeatureAtlasModal}
-                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border bg-[#FAF7F2] dark:bg-[#292524] text-[#1C1917] dark:text-[#FAF7F2] border-[#D6CEBF] dark:border-[#44403C] hover:border-[#D97706]/60 transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border bg-[#FAF7F2] text-[#1C1917] border-[#D6CEBF] hover:border-[#D97706]/60 transition-all whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <span>Feature Atlas</span>
                 </button>

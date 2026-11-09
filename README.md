@@ -14,15 +14,26 @@ The platform rejects manipulative psychological levers (such as dopamine-spiked 
 - **Audio Narration & Guided Audio Reading**: Web Speech API audio stream with a 4-bar rhythmic pulse indicator to help younger readers follow along, narration speed switcher (**0.8x**, **1.0x**, **1.2x**), and a **visual reading-time remaining timer** adjusting dynamically based on narration speed.
 - **Persistent Audio Timestamp Bookmarks**: Automatically or manually records playback position (e.g. `Verse 4 · 01:24`) per chapter and version in `localStorage` with instant resume buttons.
 - **Text Highlighting & Note-Taking Popover**: Color-painted verse highlights stored locally, with a small non-obtrusive popover note editor on click to add, edit, or delete personal reflections, questions, and prayers.
+- **My Saved Verses & Notes Dashboard Modal + Backup My Data**: Centralized vault modal allowing users to search, filter, edit, or delete saved highlights and notes across all books, plus a one-click **Backup My Data (.json)** export button so users own their spiritual reflections.
 - **Cross-Reference Peek Popover**: Hovering or clicking subtle `[Ref]` badges reveals referenced verse text and thematic context instantly without interrupting the reading flow.
 
 ### 2. Bible Study Reading Studio (`/components/BibleStudyReadingStudio.tsx`)
 - **Lexical & Cultural Dictionary**: Deep original-language insights into Hebrew and Greek terms (*Ra‘ah* Shepherd, *Nephesh* Soul, *Chesed* Lovingkindness, *Logos* Word, *Mishpat* Justice, *Shalom* Wholeness) complete with ancient artifact cross-references.
+- **Scripture Insight Popover**: Triggers on verse selection to offer an age-aligned **Reflection Prompt** (`Ages 3–7`, `Ages 8–12`, or `Ages 13–18`) alongside a personal reflection vault persisted in `localStorage`.
 - **7-Day Reading Velocity Chart**: Recharts-powered area and bar graph visualizing daily chapter consistency and study minutes over the past week.
 - **30-Day Visual Reading Heatmap**: Matrix grid and Recharts volume curve tracking 30-day chapter activity, active streaks (*18-Day Streak 🔥*), and habit milestones.
 - **Reading Goal Tracker Card**: Interactive daily/weekly chapter goal input with a stunning **SVG visual progress ring** showing completion percentage co-ordinated with canon progress.
 
-### 3. Multi-Tier Formation Studios & Parent Portal
+### 3. Semantic Search Index (`/components/SemanticSearchSection.tsx`)
+- **Voice-to-Text Search Input**: Built-in Web Speech API microphone button allowing younger users and families to speak their biblical questions conversationally.
+- **Recent Searches Management**: Private `localStorage` study trail with individual item removal and a **Clear Recent Searches** button in the sidebar.
+- **Literary Genre Lens**: Filters passages across Historical Narrative, Poetic & Wisdom, and Prophetic & Lament genres.
+
+### 4. Sanctuary Dashboard Bar, Daily Prayer & Daily Affirmation (`/components/SanctuaryDashboardBar.tsx` & `/components/DailyPrayerModal.tsx`)
+- **Daily Prayer**: Offers short, non-coercive, meditative prayers tailored to the user's selected age group (**3–7**, **8–12**, or **13–18**) with a **Save to Favorites** option persisted to `localStorage`, plus a full private petition vault.
+- **Daily Affirmation**: Displays positive, faith-based morning reflections matching the warm minimalist brand aesthetic and allows users to **Pin to Growth History** (`localStorage`).
+
+### 5. Multi-Tier Formation Studios & Parent Portal
 - **Bedtime Sanctuary (Ages 3–7)**: Gentle bedtime stories, morning bridge conversation starters, and soft lullaby liturgy.
 - **Ancient Archive (Ages 8–12)**: Levantine topography, Iron Age archaeology, and historical Levantine context.
 - **Safe Harbor (Ages 13–18)**: Honest theological inquiries, encrypted personal journals, and mentor discussion prompts.
@@ -36,7 +47,7 @@ The platform rejects manipulative psychological levers (such as dopamine-spiked 
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS v4 with custom warm grounding palette (`#1C1917` deep charcoal, `#FAF7F2` cream, `#D97706` soft amber)
 - **Animation**: Framer Motion (`motion/react`)
-- **Visualizations**: Recharts (Composed charts, area charts, bar charts, custom SVG progress rings)
+- **Visualizations**: Recharts & D3.js (Composed charts, area charts, bar charts, longitudinal curves, custom SVG progress rings)
 - **Icons**: Lucide React
 - **Persistence**: `localStorage` for offline-first privacy and seamless session continuity
 
@@ -53,3 +64,4 @@ The platform rejects manipulative psychological levers (such as dopamine-spiked 
    npm run dev
    ```
 3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+

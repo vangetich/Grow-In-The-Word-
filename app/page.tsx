@@ -249,6 +249,16 @@ export default function HomePage() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const target = entry.target as HTMLElement;
+            const staggerAttr = target.dataset.staggerIndex;
+            const staggerDelayMs = staggerAttr
+              ? Number(staggerAttr) * 90
+              : 0;
+            if (staggerDelayMs > 0) {
+              target.style.transitionDelay = `${staggerDelayMs}ms`;
+              window.setTimeout(() => {
+                target.style.removeProperty('transition-delay');
+              }, staggerDelayMs + 650);
+            }
             target.dataset.revealed = 'true';
             obs.unobserve(target);
           }
@@ -437,6 +447,7 @@ export default function HomePage() {
           }
         } else {
           // Card newly entered the filtered view
+          el.dataset.revealed = 'true';
           animatingElements.push({el, deltaX: 0, deltaY: 0, isNew: true});
         }
       });
@@ -456,24 +467,25 @@ export default function HomePage() {
         // Step 2: Force browser reflow to commit inverted positions
         void animatingElements[0].el.offsetHeight;
 
-        // Step 3: Play - apply smooth spring-based CSS transitions to animate to natural layout position
+        // Step 3: Play - apply smooth spring-based CSS transitions with staggered delay to animate to natural layout position
         animationFrameRef.current = requestAnimationFrame(() => {
-          animatingElements.forEach(({el}) => {
-            el.style.transition =
-              'transform 400ms cubic-bezier(0.34, 1.35, 0.64, 1), opacity 320ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms ease, box-shadow 200ms ease';
+          animatingElements.forEach(({el}, idx) => {
+            const delayMs = idx * 55;
+            el.style.transition = `transform 400ms cubic-bezier(0.34, 1.35, 0.64, 1) ${delayMs}ms, opacity 320ms cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, border-color 200ms ease, box-shadow 200ms ease`;
             el.style.transform = 'translate3d(0, 0, 0) scale(1)';
             el.style.opacity = '1';
           });
         });
 
-        // Step 4: Clean up inline style overrides after transition completes
+        // Step 4: Clean up inline style overrides after staggered transition completes
+        const maxDelayMs = animatingElements.length * 55;
         cleanupTimeoutRef.current = setTimeout(() => {
           animatingElements.forEach(({el}) => {
             el.style.removeProperty('transition');
             el.style.removeProperty('transform');
             el.style.removeProperty('opacity');
           });
-        }, 420);
+        }, 440 + maxDelayMs);
       }
     }
 
@@ -577,9 +589,7 @@ export default function HomePage() {
             onEngageContent={handleEngageContent}
             isNightSanctuary={isNightSanctuary}
             onOpenPassageInStudio={() => {
-              if (typeof window !== 'undefined') {
-                window.location.href = '/bible-study-studio';
-              }
+              router.push('/bible-study-studio');
             }}
           />
         </div>
@@ -608,13 +618,13 @@ export default function HomePage() {
               {/* Header with Title and Filtering Controls */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#E5DEC9] pb-6 min-w-0">
                 <div className="max-w-2xl space-y-3 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#92400E] dark:text-[#FBBF24] min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#92400E] min-w-0">
                     <span>Dedicated Exploration Studios</span>
                     <span aria-hidden="true">·</span>
                     <span>15-Year Formative Roadmap</span>
                   </div>
                   <h2
-                    className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1C1917] dark:text-[#FAF7F2]"
+                    className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1C1917]"
                     style={{
                       fontFamily: 'var(--font-display), serif',
                       textWrap: 'balance',
@@ -622,7 +632,7 @@ export default function HomePage() {
                   >
                     Dedicated Formation Studios &amp; Portals
                   </h2>
-                  <p className="text-sm sm:text-base text-[#1C1917] dark:text-[#FAF7F2] font-medium leading-relaxed">
+                  <p className="text-sm sm:text-base text-[#1C1917] font-medium leading-relaxed">
                     Explore each dedicated environment in the Grow In The Word ecosystem.
                     Each studio has been crafted as an independent, distraction-free space with
                     a subtle 15-year developmental journey progress indicator.
@@ -795,12 +805,12 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Filtered 8 Studio Cards Grid with Header Progress Indicators & CSS Transition Repositioning */}
+              {/* Filtered 8 Studio Cards Grid with Staggered Scroll-Reveal & CSS Transition Repositioning */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-w-0 transition-all duration-300">
                 {STUDIO_CARDS.filter((card) => {
                   if (selectedStudioAgeFilter === 'all') return true;
                   return card.applicableRanges.includes(selectedStudioAgeFilter);
-                }).map((card) => {
+                }).map((card, cardIndex) => {
                   const Icon = card.icon;
                   const isPrimaryTarget =
                     card.primaryStage === selectedStudioAgeFilter;
@@ -808,6 +818,9 @@ export default function HomePage() {
                   return (
                     <div
                       key={card.id}
+                      data-scroll-reveal="true"
+                      data-stagger-index={cardIndex}
+                      style={{transitionDelay: `${cardIndex * 90}ms`}}
                       ref={(el) => {
                         if (el) {
                           cardElementsRef.current.set(card.id, el);
@@ -819,7 +832,7 @@ export default function HomePage() {
                         if ((e.target as HTMLElement).closest('a, button')) return;
                         router.push(card.href);
                       }}
-                      className={`rounded-2xl bg-[#FAF7F2] dark:bg-[#24211E] border p-6 flex flex-col justify-between space-y-5 shadow-xs group will-change-transform cursor-pointer relative overflow-hidden transition-[transform,box-shadow,border-color,background-color,opacity] duration-350 ease-[cubic-bezier(0.34,1.45,0.64,1)] hover:scale-[1.025] hover:-translate-y-1.5 hover:shadow-[0_22px_40px_-12px_rgba(41,37,36,0.16),0_8px_16px_-4px_rgba(217,119,6,0.12)] dark:hover:shadow-[0_22px_40px_-12px_rgba(0,0,0,0.7),0_8px_16px_-4px_rgba(217,119,6,0.25)] motion-reduce:transform-none motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:hover:translate-y-0 ${
+                      className={`opacity-0 translate-y-6 data-[revealed=true]:opacity-100 data-[revealed=true]:translate-y-0 motion-reduce:opacity-100 motion-reduce:translate-y-0 rounded-2xl bg-[#FAF7F2] dark:bg-[#24211E] border p-6 flex flex-col justify-between space-y-5 shadow-xs group will-change-transform cursor-pointer relative overflow-hidden transition-[transform,box-shadow,border-color,background-color,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:!delay-0 hover:scale-[1.025] hover:-translate-y-1.5 hover:shadow-[0_22px_40px_-12px_rgba(41,37,36,0.16),0_8px_16px_-4px_rgba(217,119,6,0.12)] dark:hover:shadow-[0_22px_40px_-12px_rgba(0,0,0,0.7),0_8px_16px_-4px_rgba(217,119,6,0.25)] motion-reduce:transform-none motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:hover:translate-y-0 ${
                         isPrimaryTarget
                           ? 'border-[#D97706] ring-2 ring-[#D97706]/40 hover:border-[#D97706] hover:ring-[#D97706]/60'
                           : isCelebrated
@@ -944,6 +957,9 @@ export default function HomePage() {
           <AdminBackendMaintenanceSection
             onOpenJourneyModal={handleOpenJourneyModal}
             onEngageContent={handleEngageContent}
+            engagementLog={engagementLog}
+            growthPoints={growthPoints}
+            recentActivityLabel={recentActivityLabel}
           />
         </div>
 
@@ -967,9 +983,7 @@ export default function HomePage() {
         onManualNourish={handleEngageContent}
         onOpenJourneyModal={handleOpenJourneyModal}
         onNavigateToGrowthSection={() => {
-          if (typeof window !== 'undefined') {
-            window.location.href = '/growth-tracker';
-          }
+          router.push('/growth-tracker');
         }}
       />
 

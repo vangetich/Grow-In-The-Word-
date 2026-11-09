@@ -1,8 +1,17 @@
 'use client';
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import Image from 'next/image';
-import {ArrowRight, Volume2, Compass, Lock, BookOpen} from 'lucide-react';
+import {motion, AnimatePresence} from 'motion/react';
+import {
+  ArrowRight,
+  Volume2,
+  Compass,
+  Lock,
+  BookOpen,
+  Pause,
+  Play,
+} from 'lucide-react';
 import {
   AGE_EVOLUTION_SNAPSHOTS,
   HERO_COPY_VARIANTS,
@@ -15,6 +24,8 @@ interface HeroSectionProps {
 
 export default function HeroSection({onOpenJourneyModal}: HeroSectionProps) {
   const [selectedCopyIndex, setSelectedCopyIndex] = useState<number>(0);
+  const [isAutoRolling, setIsAutoRolling] = useState<boolean>(true);
+  const [isHoverPaused, setIsHoverPaused] = useState<boolean>(false);
   const [selectedSnapshotIndex, setSelectedSnapshotIndex] = useState<number>(2); // Default Age 10 (Archive)
   const [imgError, setImgError] = useState(false);
 
@@ -24,7 +35,20 @@ export default function HeroSection({onOpenJourneyModal}: HeroSectionProps) {
     {label: 'Age 16 · Safe Harbor', index: 3},
   ];
 
-  const activeCopy = HERO_COPY_VARIANTS[selectedCopyIndex];
+  const totalVariants = HERO_COPY_VARIANTS.length;
+  const isEffectivelyRolling = isAutoRolling && !isHoverPaused;
+
+  // Rolling auto-scroll cycle across the 4 primary headings (pauses on hover over reel or via Pause button)
+  useEffect(() => {
+    if (!isEffectivelyRolling) return;
+    const timer = window.setInterval(() => {
+      setSelectedCopyIndex((prev) => (prev + 1) % totalVariants);
+    }, 4800);
+    return () => window.clearInterval(timer);
+  }, [isEffectivelyRolling, totalVariants]);
+
+  const activeCopy =
+    HERO_COPY_VARIANTS[selectedCopyIndex] ?? HERO_COPY_VARIANTS[0];
   const activeSnap = AGE_EVOLUTION_SNAPSHOTS[selectedSnapshotIndex];
 
   return (
@@ -42,44 +66,145 @@ export default function HeroSection({onOpenJourneyModal}: HeroSectionProps) {
       <div className="relative w-full max-w-[1280px] mx-auto px-4 sm:px-6 min-w-0">
         {/* Center-Aligned Hero Fold: Disarms Skepticism with Radical Honesty */}
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          {/* Eyebrow Text (Small, uppercase, spaced) with Ancient History Hover Insight */}
-          <div className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.22em] text-[#4A5D4E] flex items-center justify-center flex-wrap gap-1">
-            {activeCopy.kicker.includes('ANCIENT HISTORY') ? (
-              <>
-                <span>
-                  {activeCopy.kicker.split('ANCIENT HISTORY')[0]}
-                </span>
-                <AncientHistoryInsightPopover>
-                  ANCIENT HISTORY
-                </AncientHistoryInsightPopover>
-                <span>
-                  {activeCopy.kicker.split('ANCIENT HISTORY')[1]}
-                </span>
-              </>
-            ) : (
-              <span>{activeCopy.kicker}</span>
-            )}
+          {/* Auto-Scrolling Moving Header Reel (Hover over reel to pause automatically) */}
+          <div
+            onMouseEnter={() => setIsHoverPaused(true)}
+            onMouseLeave={() => setIsHoverPaused(false)}
+            className="group/reel relative rounded-2xl px-3 py-3 sm:px-6 sm:py-4 transition-colors duration-300 hover:bg-[#F2ECE1]/60"
+            title="Hover over heading reel to pause auto-scroll"
+          >
+            {/* Rolling Auto-Scroll Viewport for Kicker, Headline & Sub-Headline */}
+            <div
+              className="relative overflow-hidden min-h-[240px] sm:min-h-[250px] flex flex-col items-center justify-center"
+              aria-live="polite"
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeCopy.id}
+                  initial={{opacity: 0, y: 28}}
+                  animate={{opacity: 1, y: 0}}
+                  exit={{opacity: 0, y: -28}}
+                  transition={{
+                    duration: 0.55,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="space-y-5 w-full"
+                >
+                  {/* Eyebrow Text (Small, uppercase, spaced) with Ancient History Hover Insight */}
+                  <div className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.22em] text-[#4A5D4E] flex items-center justify-center flex-wrap gap-1 min-h-[24px]">
+                    {activeCopy.kicker.includes('ANCIENT HISTORY') ? (
+                      <>
+                        <span>
+                          {activeCopy.kicker.split('ANCIENT HISTORY')[0]}
+                        </span>
+                        <AncientHistoryInsightPopover>
+                          ANCIENT HISTORY
+                        </AncientHistoryInsightPopover>
+                        <span>
+                          {activeCopy.kicker.split('ANCIENT HISTORY')[1]}
+                        </span>
+                      </>
+                    ) : (
+                      <span>{activeCopy.kicker}</span>
+                    )}
+                  </div>
+
+                  {/* Headline (Large Sophisticated Serif) */}
+                  <h1
+                    className="text-[#1A1A1A] font-normal tracking-tight leading-[1.06]"
+                    style={{
+                      fontFamily: 'var(--font-display), serif',
+                      fontSize: 'clamp(2.5rem, 5vw, 4.35rem)',
+                      textWrap: 'balance',
+                    }}
+                  >
+                    {activeCopy.headline}
+                  </h1>
+
+                  {/* Sub-Headline (Clean Geometric Sans-Serif, max 2-3 lines) */}
+                  <p className="max-w-2xl mx-auto text-[#44403C] text-base sm:text-lg leading-[1.68] font-normal">
+                    {activeCopy.subHeadline}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Pause / Resume Button & Reel Progress Controls Just Below the Moving Reel */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsAutoRolling((prev) => !prev)}
+                aria-pressed={!isAutoRolling}
+                aria-label={
+                  isAutoRolling
+                    ? 'Pause auto-scrolling header reel'
+                    : 'Resume auto-scrolling header reel'
+                }
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold border transition-all cursor-pointer shadow-2xs ${
+                  !isEffectivelyRolling
+                    ? 'bg-[#1A1A1A] text-[#F9F6F0] border-[#D97706]'
+                    : 'bg-[#F2ECE1] hover:bg-[#E5DEC9] text-[#1A1A1A] border-[#E5DEC9]'
+                }`}
+              >
+                {!isEffectivelyRolling ? (
+                  <>
+                    <Play className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>
+                      {!isAutoRolling
+                        ? 'Resume Auto-Scroll'
+                        : 'Paused on Hover'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Pause className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>Pause Auto-Scroll</span>
+                  </>
+                )}
+              </button>
+
+              {/* 4-Heading Reel Selector Pills Directly Below Moving Reel */}
+              <div
+                role="group"
+                aria-label="Select or inspect 1 of 4 rolling hero headings"
+                className="inline-flex flex-wrap items-center justify-center gap-1 p-1 bg-[#F2ECE1] border border-[#E5DEC9] rounded-full"
+              >
+                {HERO_COPY_VARIANTS.map((variant, idx) => {
+                  const isSelected = idx === selectedCopyIndex;
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() => setSelectedCopyIndex(idx)}
+                      title={variant.label}
+                      className={`relative overflow-hidden px-3 py-1 text-xs font-medium rounded-full transition-colors duration-150 cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-[#1A1A1A] text-[#F9F6F0] font-semibold shadow-2xs'
+                          : 'text-[#57534E] hover:text-[#1A1A1A]'
+                      }`}
+                    >
+                      <span className="font-mono text-[10px] text-[#D97706]">
+                        0{idx + 1}
+                      </span>
+                      <span className="hidden md:inline">{variant.label}</span>
+                      {isSelected && isEffectivelyRolling && (
+                        <motion.span
+                          key={`progress-${variant.id}`}
+                          initial={{scaleX: 0}}
+                          animate={{scaleX: 1}}
+                          transition={{duration: 4.8, ease: 'linear'}}
+                          className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#D97706] origin-left"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Headline (Large Sophisticated Serif) */}
-          <h1
-            className="text-[#1A1A1A] font-normal tracking-tight leading-[1.06]"
-            style={{
-              fontFamily: 'var(--font-display), serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.35rem)',
-              textWrap: 'balance',
-            }}
-          >
-            {activeCopy.headline}
-          </h1>
-
-          {/* Sub-Headline (Clean Geometric Sans-Serif, max 2-3 lines) */}
-          <p className="max-w-2xl mx-auto text-[#44403C] text-base sm:text-lg leading-[1.68] font-normal">
-            {activeCopy.subHeadline}
-          </p>
-
           {/* Primary Pill-Shaped Deep Charcoal CTA Button with Soft Amber Hover State */}
-          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               type="button"
               onClick={() => onOpenJourneyModal(activeSnap.tierId)}
@@ -113,33 +238,6 @@ export default function HeroSection({onOpenJourneyModal}: HeroSectionProps) {
             <span>Zero religious coercion</span>
             <span aria-hidden="true">·</span>
             <span>Encrypted teen privacy from day one</span>
-          </div>
-
-          {/* Interactive Copywriter Variant Switcher */}
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-2">
-            <div
-              role="group"
-              aria-label="Switch Hero Copywriting Lens"
-              className="inline-flex flex-wrap items-center justify-center gap-1 p-1 bg-[#F2ECE1] border border-[#E5DEC9] rounded-xl"
-            >
-              {HERO_COPY_VARIANTS.map((variant, idx) => {
-                const isSelected = idx === selectedCopyIndex;
-                return (
-                  <button
-                    key={variant.id}
-                    type="button"
-                    onClick={() => setSelectedCopyIndex(idx)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap shrink-0 ${
-                      isSelected
-                        ? 'bg-[#1A1A1A] text-[#F9F6F0] font-semibold shadow-2xs'
-                        : 'text-[#57534E] hover:text-[#1A1A1A]'
-                    }`}
-                  >
-                    {variant.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
 

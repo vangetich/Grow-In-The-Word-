@@ -1,28 +1,5 @@
 import type {Metadata} from 'next';
-import {Fraunces, Plus_Jakarta_Sans, JetBrains_Mono} from 'next/font/google';
 import './globals.css';
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-  weight: ['400', '600'],
-  style: ['normal', 'italic'],
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  display: 'swap',
-  weight: ['400', '500'],
-});
 
 export const metadata: Metadata = {
   title: 'Grow In The Word — Decade-Spanning Scripture Companion & UI/UX Spec',
@@ -46,7 +23,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} scroll-smooth overflow-x-clip w-full max-w-full`}
+      className="scroll-smooth overflow-x-clip w-full max-w-full"
     >
       <body
         suppressHydrationWarning
@@ -58,3 +35,4 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     </html>
   );
 }
+

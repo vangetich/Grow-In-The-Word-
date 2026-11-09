@@ -310,7 +310,7 @@ export default function ReflectionJournalOverlay({
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-2.5 py-3 sm:p-6 bg-[#1A1A1A]/80 backdrop-blur-xs overflow-y-auto overflow-x-hidden w-full max-w-full"
         >
           <motion.div
-            ref={modalFocusTrapRef}
+            ref={modalFocusTrapRef as React.RefObject<HTMLDivElement>}
             tabIndex={-1}
             initial={{opacity: 0, scale: 0.94, y: 28}}
             animate={{opacity: 1, scale: 1, y: 0}}

@@ -2074,6 +2074,8 @@ export default function BibleStudyReadingStudio({
   >('all');
 
   // Scripture Insight & Age Stage Reflection State (Persisted to localStorage)
+  const [isScriptureInsightPopoverOpen, setIsScriptureInsightPopoverOpen] =
+    useState<boolean>(false);
   const [insightAgeStage, setInsightAgeStage] = useState<'3-7' | '8-12' | '13-18'>(() => {
     if (typeof window === 'undefined') return '8-12';
     try {
@@ -3598,7 +3600,10 @@ export default function BibleStudyReadingStudio({
                   return (
                     <div
                       key={verse.verseNumber}
-                      onClick={() => setHighlightedVerse(verse.verseNumber)}
+                      onClick={() => {
+                        setHighlightedVerse(verse.verseNumber);
+                        setIsScriptureInsightPopoverOpen(true);
+                      }}
                       className={`p-4 rounded-xl border transition-all cursor-pointer ${
                         isHighlighted
                           ? 'bg-[#D97706]/10 border-[#D97706] shadow-xs'
@@ -3715,6 +3720,7 @@ export default function BibleStudyReadingStudio({
                               onClick={() => {
                                 setHighlightedVerse(verse.verseNumber);
                                 setMobileActiveVersion(versionId);
+                                setIsScriptureInsightPopoverOpen(true);
                                 onEngageContent?.(
                                   5,
                                   `Bookmarked & Compared ${currentPassage.reference.split(':')[0]}:${verse.verseNumber} (${versionId})`
@@ -3772,7 +3778,10 @@ export default function BibleStudyReadingStudio({
                   <button
                     key={v.verseNumber}
                     type="button"
-                    onClick={() => setHighlightedVerse(v.verseNumber)}
+                    onClick={() => {
+                      setHighlightedVerse(v.verseNumber);
+                      setIsScriptureInsightPopoverOpen(true);
+                    }}
                     className={`w-7 h-7 rounded-lg font-mono text-xs font-semibold transition-colors cursor-pointer ${
                       v.verseNumber === highlightedVerse
                         ? 'bg-[#D97706] text-[#1A1A1A]'
@@ -3941,20 +3950,160 @@ export default function BibleStudyReadingStudio({
                       <span className="text-[11px] text-[#57534E]">
                         Persisted privately in <code className="font-mono">localStorage</code>
                       </span>
-                      <button
-                        type="button"
-                        onClick={handleSaveCurrentReflection}
-                        className="px-4 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-[#1A1A1A] text-xs font-semibold transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-                      >
-                        <BookmarkCheck className="w-3.5 h-3.5" />
-                        <span>Save Reflection</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsScriptureInsightPopoverOpen(true)}
+                          className="px-3 py-2 rounded-xl bg-[#F2ECE1] hover:bg-[#E5DEC9] text-[#1A1A1A] border border-[#D97706]/40 text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
+                          <span>Open Insight Popover</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveCurrentReflection}
+                          className="px-4 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-[#1A1A1A] text-xs font-semibold transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <BookmarkCheck className="w-3.5 h-3.5" />
+                          <span>Save Reflection</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })()}
           </div>
+
+          {/* Interactive Scripture Insight Popover (Triggers on Verse Selection) */}
+          <AnimatePresence>
+            {isScriptureInsightPopoverOpen && (
+              <motion.div
+                role="dialog"
+                aria-label={`Scripture Insight Popover for ${currentPassage.reference.split(':')[0]}:${highlightedVerse}`}
+                initial={{opacity: 0, y: 12, scale: 0.96}}
+                animate={{opacity: 1, y: 0, scale: 1}}
+                exit={{opacity: 0, y: 10, scale: 0.96}}
+                transition={{duration: 0.2}}
+                className="fixed bottom-6 left-4 sm:left-6 z-50 w-[min(420px,calc(100vw-2rem))] rounded-2xl bg-[#FAF7F2] text-[#1C1917] border-2 border-[#D97706] shadow-2xl p-4 sm:p-5 space-y-3.5"
+              >
+                <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-[#E5DEC9]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#D97706]/20 text-[#D97706] flex items-center justify-center shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#92400E] font-semibold">
+                        Scripture Insight Popover
+                      </div>
+                      <h5
+                        className="text-sm font-semibold text-[#1C1917] truncate"
+                        style={{fontFamily: 'var(--font-display), serif'}}
+                      >
+                        {currentPassage.reference.split(':')[0]}:{highlightedVerse} · Reflection Prompt
+                      </h5>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsScriptureInsightPopoverOpen(false)}
+                    aria-label="Close Scripture Insight popover"
+                    className="p-1.5 rounded-lg bg-[#F2ECE1] hover:bg-[#E5DEC9] text-[#57534E] hover:text-[#1C1917] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Age Stage Switcher (3-7, 8-12, 13-18) */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F2ECE1] border border-[#E5DEC9]">
+                  {(
+                    [
+                      {id: '3-7', label: 'Ages 3–7'},
+                      {id: '8-12', label: 'Ages 8–12'},
+                      {id: '13-18', label: 'Ages 13–18'},
+                    ] as const
+                  ).map((stageTab) => {
+                    const isSelected = insightAgeStage === stageTab.id;
+                    return (
+                      <button
+                        key={stageTab.id}
+                        type="button"
+                        onClick={() => handleSaveInsightAgeStage(stageTab.id)}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#1C1917] text-[#FAF7F2] shadow-2xs'
+                            : 'text-[#57534E] hover:text-[#1C1917]'
+                        }`}
+                      >
+                        {stageTab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {(() => {
+                  const passagePrompts =
+                    SCRIPTURE_INSIGHT_PROMPTS[selectedPassageId] ||
+                    SCRIPTURE_INSIGHT_PROMPTS.default;
+                  const currentPromptData = passagePrompts[insightAgeStage];
+                  return (
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-xl bg-[#F2ECE1]/80 border border-[#E5DEC9] space-y-1.5">
+                        <div className="text-[11px] font-mono uppercase tracking-wider text-[#92400E] font-semibold">
+                          {currentPromptData.title}
+                        </div>
+                        <p className="text-xs text-[#1C1917] leading-relaxed">
+                          &ldquo;{currentPromptData.prompt}&rdquo;
+                        </p>
+                        <div className="pt-1.5 border-t border-[#E5DEC9] text-xs text-[#44403C]">
+                          <strong className="text-[#D97706]">Reflection Prompt:</strong>{' '}
+                          {currentPromptData.wonderQuestion}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <textarea
+                          value={verseReflections[currentReflectionKey] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVerseReflections((prev) => {
+                              const updated = {...prev, [currentReflectionKey]: val};
+                              try {
+                                window.localStorage.setItem(
+                                  'grow_in_the_word_verse_reflections_v1',
+                                  JSON.stringify(updated)
+                                );
+                              } catch {}
+                              return updated;
+                            });
+                          }}
+                          placeholder="Jot down a quiet reflection on this verse..."
+                          rows={2}
+                          className="w-full p-2.5 rounded-xl bg-white border border-[#E5DEC9] focus:border-[#D97706] focus:outline-none text-xs text-[#1C1917] resize-none"
+                        />
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-mono text-[#78716C]">
+                            Saved to localStorage
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleSaveCurrentReflection();
+                              setIsScriptureInsightPopoverOpen(false);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-[#D97706] hover:bg-[#B45309] text-[#1A1A1A] text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Save &amp; Close</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* PART 3: THE CURATED CONCORDANCE HUB */}
@@ -4489,7 +4638,7 @@ export default function BibleStudyReadingStudio({
 
             {/* Slide-Over Side Drawer */}
             <motion.div
-              ref={recentReadsDrawerRef}
+              ref={recentReadsDrawerRef as React.RefObject<HTMLDivElement>}
               initial={{x: '100%', opacity: 0.8}}
               animate={{x: 0, opacity: 1}}
               exit={{x: '100%', opacity: 0.8}}

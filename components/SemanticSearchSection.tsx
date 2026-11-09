@@ -481,16 +481,18 @@ export default function SemanticSearchSection({
 
   // Voice-to-Text Speech Recognition State & Handler
   const [isListening, setIsListening] = useState<boolean>(false);
+  const [voiceSearchNotice, setVoiceSearchNotice] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
 
   const handleToggleVoiceSearch = useCallback(() => {
     if (typeof window === 'undefined') return;
+    setVoiceSearchNotice(null);
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert(
+      setVoiceSearchNotice(
         'Voice-to-Text speech recognition is not supported by your browser. Please try Chrome, Edge, or Safari.'
       );
       return;
@@ -948,6 +950,19 @@ export default function SemanticSearchSection({
             </div>
           )}
 
+          {voiceSearchNotice && (
+            <div className="px-4 py-2.5 rounded-xl bg-[#D97706]/15 border border-[#D97706]/40 text-[#92400E] text-xs flex items-center justify-between">
+              <span>{voiceSearchNotice}</span>
+              <button
+                type="button"
+                onClick={() => setVoiceSearchNotice(null)}
+                className="text-xs font-semibold underline cursor-pointer ml-3"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {/* Filter Row: Category Tabs + Developmental Tier Filter + Quick Semantic Queries */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
             {/* Category Filter */}
@@ -1365,11 +1380,11 @@ export default function SemanticSearchSection({
                     <button
                       type="button"
                       onClick={handleClearRecentSearches}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono text-[#78716C] hover:text-[#991B1B] hover:bg-[#FEE2E2]/60 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-semibold text-[#991B1B] bg-[#FEE2E2]/50 hover:bg-[#FEE2E2] border border-[#FECACA] transition-colors cursor-pointer"
                       title="Clear all recent searches from localStorage"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Clear All</span>
+                      <span>Clear Recent Searches</span>
                     </button>
                   )}
                 </div>
