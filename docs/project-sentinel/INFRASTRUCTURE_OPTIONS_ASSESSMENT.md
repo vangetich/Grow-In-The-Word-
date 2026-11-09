@@ -75,7 +75,7 @@ For each candidate, obtain current regional availability, child-data and sensiti
 ### Current environment facts
 The owner confirms that the application is being developed in Google AI Studio and is not currently deployed or hosted. The repository's .env.example contains placeholders and explanatory comments about AI Studio secret injection and a possible Cloud Run URL; these comments do not verify that a Cloud Run service, production secret, database or external backend exists. The Next.js standalone-output setting is a build configuration, not deployment evidence.
 
-The Phase 00B source baseline is 060ef2f9c651896aaf1d719e5b8f78ee251e054e. The audit branch is 40 commits ahead of and 3 behind current main. Main-only changes include application UI/component updates; no merge was performed in this design milestone. Reconcile the source branch before implementation and rerun affected build/runtime checks.
+The Phase 00B source baseline is 060ef2f9c651896aaf1d719e5b8f78ee251e054e. The audit branch is three commits behind current main. Main-only changes include application UI/component updates; the audit-branch changes in this milestone are documentation-only. No merge was performed. Reconcile the source branch before implementation and rerun affected build/runtime checks.
 
 ### Candidate status
 - Google Cloud Run remains the leading hosting candidate to evaluate alongside at least one credible alternative.
