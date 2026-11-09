@@ -44,3 +44,27 @@ Select a provider only after runtime assurance, requirements discovery, legal/da
 ## Owner-supported evaluation direction
 
 The owner supports evaluating Google Cloud Run as the leading hosting candidate while comparing alternatives, and managed PostgreSQL as the leading transactional database candidate. A Cloud Run plus managed PostgreSQL pairing (including Cloud SQL for PostgreSQL as one candidate) should be evaluated first for integration fit, region/data residency, network connectivity, connection pooling, backups/PITR, high availability, cost and operational burden. Compare at least one alternative hosting approach and other managed PostgreSQL options; retain a document-database comparison only against concrete access patterns. No production provider is selected by this direction.
+
+
+## 10. Evidence and provider-decision addendum — 2026-11-09
+
+### Current environment facts
+The owner confirms that the application is being developed in Google AI Studio and is not currently deployed or hosted. The repository's .env.example contains placeholders and explanatory comments about AI Studio secrets and a possible Cloud Run URL; these comments do not verify that a Cloud Run service, production secret, database or external backend exists. The Next.js standalone-output setting is a build configuration, not deployment evidence.
+
+The Phase 00B source baseline is 060ef2f9c651896aaf1d719e5b8f78ee251e054e. The audit branch is 40 commits ahead of and 3 behind current main. Main-only changes include application UI/component updates; no merge was performed in this design milestone. Reconcile the source branch before implementation and rerun affected build/runtime checks.
+
+### Candidate status
+- Google Cloud Run remains the leading hosting candidate to evaluate alongside at least one credible alternative.
+- Managed PostgreSQL remains the leading transactional database category to evaluate; Cloud SQL for PostgreSQL is one candidate, not a selection.
+- No provider, region, database, storage, identity, queue, analytics or AI vendor is selected.
+- No production resources should be provisioned as part of Phase 00C.
+
+### Evaluation evidence required
+For each candidate, obtain current regional availability, child-data and sensitive-data terms, data-processing/subprocessor terms, transfer and support-access details, backup/PITR and restore evidence, network and connection-pooling constraints, security controls, observability, portability/export, service limits, pricing at low/expected/high load and operational skill requirements. Evaluate the complete data path, not just the compute region.
+
+### Evidence labels
+- **Verified:** source configuration and dependencies described above; owner-confirmed non-deployment status.
+- **Proposed:** provider-neutral ports/adapters and candidate comparison.
+- **Assumption:** a managed runtime and managed relational database may reduce early operational burden.
+- **Unresolved:** runtime compatibility, region, cost, scale, contractual terms, identity integration, networking, RPO/RTO and support model.
+- **Approval:** vendor and region selection requires evidence review and explicit owner approval; legal/privacy review is a separate gate.
