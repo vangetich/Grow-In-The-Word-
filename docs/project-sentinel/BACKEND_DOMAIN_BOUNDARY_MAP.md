@@ -18,6 +18,8 @@
 | AI Gateway | Purpose-limited context assembly, provider routing, safety and citation checks | Direct unrestricted database access |
 | Engagement & Analytics | Aggregated, minimized metrics and derived read models | Source-of-truth mutation or sensitive journal content |
 | Trust & Operations | Audit events, policy changes, security events and operational telemetry | Private content in logs |
+| Content & Rights Registry | Source/version identifiers, provenance evidence, licence scope, attribution and permitted-use metadata | Unlicensed distribution or inferred permission |
+| Safeguarding & Incident Handling | Restricted report intake, triage metadata, escalation/referral and controlled retention, if approved | General analytics, AI context or unrestricted family/admin access |
 
 ## 2. Ownership rules
 - Each domain owns its validation rules and application service interface.
@@ -74,3 +76,25 @@ A learner moving between age experiences must retain only records whose retentio
 Care relationships and authority evidence belong within Identity & Governance, with an explicit Care & Access workflow. Distinguish parent, legally appointed guardian, kinship/foster caregiver, institutional representative and unverified caregiver. No relationship label alone grants authorization. Institutional representatives receive scoped access only to learners and actions for which authority is verified. A child without verified authority may receive public non-personalized content but must not be enrolled into sensitive personalized processing by a workaround.
 
 Religious identity is not required to access public learning content and must not be inferred. The product's Christian purpose must be disclosed transparently. Religious reflections/belief data require sensitive classification and purpose-limited processing.
+
+
+## 8. Evidence and boundary review addendum — 2026-11-09
+
+### Additional proposed boundaries
+The following capabilities should be represented explicitly in the logical architecture without implying that they exist in the current application:
+
+| Capability | Owns | Must not own |
+|---|---|---|
+| Content & Rights Registry | Source/edition/version identifiers, provenance evidence, licence scope, attribution, territory, permitted uses, expiry and takedown status | Legal conclusions unsupported by evidence, unlicensed distribution or automatic permission inference |
+| Safeguarding & Incident Handling | Restricted report intake, triage metadata, case status, escalation/referral records and controlled retention, if this capability is approved | General learner analytics, AI coaching context, ordinary family projections or unrestricted administrative browsing |
+
+The Content & Rights Registry is an architectural dependency only. Translation-by-translation and asset-by-asset rights verification remains a separate outstanding workstream. A missing or uncertain licence state must not be interpreted as permission.
+
+Safeguarding records, if introduced, require a separately approved access model, accountable roles, escalation procedures, retention schedule and legal review. They must not be conflated with private journaling or ordinary support tickets.
+
+### Evidence classification
+- **Verified:** the Phase 00B source review found front-end experience components for Bible reading/study, family/teen experiences, reflection and growth; it did not identify a backend API or authoritative persistence layer in the reviewed 75-file tree.
+- **Proposed:** the domain ownership and dependency rules in this document, including Content & Rights and Safeguarding capabilities.
+- **Assumption:** these capabilities can be implemented as modules within the initial modular monolith.
+- **Unresolved:** exact content ownership, rights metadata, safeguarding roles, case access, legal retention and whether safeguarding intake is in first-release scope.
+- **Approval:** owner and qualified legal/safeguarding review are required before either capability processes real personal or child data.
