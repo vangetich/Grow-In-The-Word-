@@ -15,7 +15,7 @@ Create audit branch and foundational documents; verify findings against code; co
 - **Candidate evaluation only:** Google Cloud Run and managed PostgreSQL are leading candidates to assess; neither is selected for production.
 - **Constraints:** no physical schema, production vendor/region selection, source-code changes, deployment, privileged operations or real-data migration.
 - **Environment:** owner confirms development in Google AI Studio; the app is not deployed or hosted. Repository placeholders and standalone-output configuration do not prove deployment.
-- **Source dependency:** audit branch is 40 commits ahead of and 3 behind current main; main-only UI/component changes must be reconciled before implementation. No merge was performed in this milestone.
+- **Source dependency:** audit branch is 3 commits behind current main; main-only UI/component changes must be reconciled before implementation. No merge was performed in this milestone.
 - **Outstanding parallel gates:** runtime/build/browser assurance, jurisdiction/privacy/safeguarding review and Bible/content provenance remain separate and open.
 - **Exit:** owner approves logical boundaries, unresolved decisions, provider evaluation criteria, operational targets and test plan; implementation still waits for runtime, legal, security and source-reconciliation gates.
 
