@@ -19,8 +19,8 @@ The application remains in Google AI Studio development and, as confirmed by the
 
 - Phase 00B records the source commit reviewed on 2026-11-08 as 060ef2f9c651896aaf1d719e5b8f78ee251e054e.
 - Commit fb0c1c2fcb5db9f853320b486a4ad2d45e824807 is a documentation-only commit that updated the Project Sentinel roadmap. It must not be described as the source-code baseline.
-- The audit branch and current main have diverged. GitHub comparison reports the audit branch 40 commits ahead of and 3 commits behind main, with 060ef2f9c651896aaf1d719e5b8f78ee251e054e as their merge base.
-- The three main-only commits change app/page.tsx and multiple application components, including Bible reader/study and navigation/visualization components, and add README.md and App History.md. No merge or source-code modification was made during this Phase 00C review.
+- The audit branch and current main have diverged. GitHub comparison identifies 060ef2f9c651896aaf1d719e5b8f78ee251e054e as their merge base and shows the audit branch is 3 commits behind main.
+- Main-only commits change app/page.tsx and multiple application components, including Bible reader/study and navigation/visualization components, and add README.md and App History.md. The audit-branch changes in this workstream are documentation-only. No merge or source-code modification was made during this Phase 00C review.
 - The architecture documents remain on the requested audit branch. Their logical direction is still useful, but UI/component mappings must be reconciled against current main before implementation.
 
 ### 2.2 Owner-confirmed environment
