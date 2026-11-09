@@ -67,3 +67,21 @@ Security and compliance fit; data location; operational maturity; managed backup
 
 ## 9. Inputs still required
 User growth projections, expected content/media volume, budget, launch countries, retention rules, offline-sync requirement, guardian/teen model, journal privacy requirements, availability target and expected support/operations capacity.
+
+
+## 10. Evidence and schema decision addendum — 2026-11-09
+
+### Verified baseline
+The Phase 00B review found browser-local preferences/progress and prayer-petition storage, route-local seeded growth state, and no central learner schema or migration set in the reviewed repository tree. This is evidence about the reviewed source baseline, not proof that no external database exists. External persistence remains unverified. The owner confirms that no application hosting/deployment is currently in place.
+
+### Proposed logical requirements
+- Separate transactional account/learner/governance records, learning events/evidence, approved content metadata, private reflection, safeguarding cases, media objects, derived projections, queues and security audit records by access and lifecycle requirements.
+- Define ownership, purpose, classification, retention, correction, export, deletion, legal hold, backup expiry and processor propagation before choosing physical tables or buckets.
+- Treat private journal storage as deferred. Do not persist real journal content until the threat model, cryptographic design, key recovery/loss behavior, access policy and deletion model are approved and tested.
+- Distinguish source records from caches, analytics read models and search indexes. Derived stores must be rebuildable or have a documented reconciliation strategy.
+
+### Assumptions and unresolved evidence
+Workload assumptions, learner volumes, event rates, media growth, geography, concurrency, offline synchronization and retention are not yet quantified. PostgreSQL is a leading relational candidate only. No table design, index plan, partition key, database vendor or storage provider is approved.
+
+### Approval gate
+A physical schema and migration plan may be prepared only after identity/authorization, jurisdiction, data classification, retention, provider, source-data inventory and workload decisions are supported by evidence and approved. Demo seeds and browser-local values must never be silently migrated as verified learner history.
