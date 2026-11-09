@@ -118,3 +118,16 @@ The matrix identifies a proposed common product baseline, local legal difference
 - unresolved copyright/current-law and online-safety work in all four markets.
 
 The matrix is a governance input only. It does not authorize a Jurisdiction Rules Engine implementation, real child-data processing, provider selection or launch.
+
+## 10. Phase 00D rule catalogue and decision specification
+
+The research-to-policy design layer is now documented in:
+
+- `PHASE_00D_JURISDICTION_RULE_CATALOGUE.md` — rule classes, lifecycle, required record fields, regional baseline, preliminary jurisdiction rule families, precedence and validation.
+- `PHASE_00D_POLICY_DECISION_SPECIFICATION.md` — conceptual decision request/response, ordered evaluation pipeline, fail-safe semantics, feature profiles and implementation gates.
+- `PHASE_00D_POLICY_TEST_VECTORS.md` — 50 proposed synthetic policy vectors covering jurisdiction, age, authority, sensitive data, AI, transfers, storage, copyright and system failure.
+- `PHASE_00D_ACCEPTANCE_CRITERIA_AND_TEST_PLAN.md` — PDS-001 through PDS-020 design and future implementation acceptance criteria.
+
+**Status:** Draft policy specification. No catalogue rule is counsel-approved or implementation-eligible by virtue of inclusion. Kenya, Uganda, Tanzania Mainland and Rwanda require current-source verification and local counsel review. Tanzania Zanzibar remains separately unresolved for non-Union matters.
+
+**Decision safety:** Unknown territory, age, authority, source status, data classification, provider location or licence scope must not silently permit processing. OPEN or suspended rules produce HOLD_FOR_REVIEW. No policy engine or application changes are authorized.
