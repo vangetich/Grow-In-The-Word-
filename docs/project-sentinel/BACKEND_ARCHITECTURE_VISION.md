@@ -72,7 +72,7 @@ Phase 00C can be reviewed when all companion design documents exist, domain owne
 ### Verified facts and source baseline
 - The Phase 00B source review identifies 060ef2f9c651896aaf1d719e5b8f78ee251e054e as the source commit reviewed on 2026-11-08. The previously listed fb0c1c2fcb5db9f853320b486a4ad2d45e824807 is a documentation-only commit that updated the roadmap; it is not the Phase 00B source baseline.
 - The owner confirms that the application is being developed in Google AI Studio and is not deployed or hosted. The standalone-output setting and .env.example placeholders/comments are configuration/documentation evidence, not evidence of a live deployment.
-- The audit branch is 40 commits ahead of and 3 commits behind current main. The three main-only commits modify the application UI/component tree. The architecture remains a logical design; component-level implementation mapping must be reconciled against current main before implementation.
+- The audit branch is three commits behind current main. Main-only commits modify the application UI/component tree, while the audit-branch changes reviewed here are documentation-only. The architecture remains a logical design; component-level implementation mapping must be reconciled against current main before implementation.
 
 ### Proposals
 - Retain the modular-monolith direction, explicit domain ownership, typed service contracts and replaceable infrastructure adapters.
