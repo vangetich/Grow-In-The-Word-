@@ -20,18 +20,29 @@
 | ADR-BE-013 | Do not implement privileged admin operations using current demo gate | Accepted safeguard | Existing client gate is not authentication/authorization | Before admin integration |
 | ADR-BE-014 | Runtime assurance and content provenance remain separate open workstreams | Accepted | Architecture design must not falsely close Phase 00B | Phase 00B exit |
 
-## Open owner decisions
-1. Is Cloud Run the preferred deployment candidate to evaluate first, or should comparison begin provider-neutral across several platforms?
-2. Is PostgreSQL acceptable as the leading database candidate for evaluation?
-3. Should one account be able to manage multiple learner profiles?
-4. What guardian/teen relationship and independent-privacy model is intended?
-5. Which launch jurisdictions and age bands are in scope for the first release?
-6. Is offline use a first-release requirement?
-7. What are the initial and three-year learner, traffic and media-volume expectations?
-8. What monthly infrastructure/operations budget range should the evaluation use?
-9. What privacy level and recovery model is required for private journaling?
-10. Which AI use cases may access which learner data, and under what consent?
+## Open owner decisions requiring explicit approval
 
+The following remain open. Existing owner-supported directions are recorded below but do not constitute production implementation approval.
+
+1. Approve or amend the modular-monolith direction, domain boundaries and server-side policy model.
+2. Confirm first-release jurisdictions, age groups and the order in which markets will be assessed.
+3. Select an authentication/account provider only after security, recovery, child-data, regional and contractual evaluation.
+4. Confirm that Google Cloud Run and managed PostgreSQL should be evaluated first; neither is selected for production.
+5. Approve data classification, purposes, retention, correction, export, deletion, legal hold and backup-expiry policy.
+6. Set availability targets, RPO/RTO, expected learner/concurrency/event/media volumes, operating budget and support capacity.
+7. Decide whether offline capability is a first-release requirement and define sync/conflict expectations.
+8. Define AI use cases, permitted data categories, consent conditions, provider constraints and human escalation boundaries.
+9. Decide whether private journaling is in first-release scope and approve its threat model, encryption/key recovery and emergency-access policy.
+10. Approve the care/guardian verification model, institutional scope, dispute handling and adult-transition behavior after legal/safeguarding review.
+
+## Owner-supported directions already recorded
+
+- ADR-BE-015/016: Cloud Run and managed PostgreSQL are leading evaluation candidates only.
+- ADR-BE-017: one parent/guardian account may manage multiple learner profiles, with separate learner-level boundaries.
+- ADR-BE-018: proposed 14–17 progressive-autonomy experience and adult control from 18, subject to law.
+- ADR-BE-019: proposed Care & Access Pathway for verified guardians, alternative care, institutional representation and no-verified-caregiver cases.
+
+These directions remain subject to the qualifications in their rows and to the approval gates above.
 ## Change control
 A decision is not approved because it appears in a proposal. Record approver, date, rationale, alternatives considered, consequences and superseding decision. Reopen only when new evidence or material scope change warrants it.
 
@@ -46,3 +57,12 @@ A decision is not approved because it appears in a proposal. Record approver, da
 | ADR-BE-019 | Introduce a Care & Access Pathway for guardianship, kinship/foster care, institutional care and no-verified-guardian cases | Proposed product requirement | Legal authority must be verified; no self-appointed guardian privilege |
 
 The detailed design is in LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY.md. Legal and safeguarding review is required before implementation. Spiritual maturity is not a permission or legal-capacity attribute.
+
+
+## Evidence reconciliation and review status — 2026-11-09
+
+- The Phase 00B source baseline is 060ef2f9c651896aaf1d719e5b8f78ee251e054e. Commit fb0c1c2fcb5db9f853320b486a4ad2d45e824807 is a documentation-only roadmap update, not the source baseline.
+- The owner confirms the app is in Google AI Studio development and is not deployed or hosted.
+- The audit branch is 40 commits ahead of and 3 behind main. Main-only commits modify UI/components. Do not treat this audit branch's component map as a current-main source audit; reconcile before implementation.
+- No physical schema, production provider, cloud project, authentication service, privileged operation or real-data migration is approved by this register.
+- ADR-BE-015 and ADR-BE-016 authorize evaluation priority only. They do not authorize Cloud Run, Cloud SQL, PostgreSQL or another provider for production.
