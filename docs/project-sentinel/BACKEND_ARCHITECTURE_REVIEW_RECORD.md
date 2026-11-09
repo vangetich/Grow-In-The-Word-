@@ -107,7 +107,7 @@ The first backend increment should be one deployable modular application, not a 
 
 1. Existing Next.js experience layer, preserved and incrementally integrated.
 2. Server-side transport/application boundary for authentication context, validation, rate limits, idempotency, policy evaluation and response mapping.
-3. Domain modules for identity/account, learner profile, consent/governance, CGR, scripture/study, learning/assessment, family/care, private reflection, AI mediation, content rights and trust/operations.
+3. Domain modules for identity/account, learner profile, consent/governance, CGR, scripture/study, learning/assessment, family/care, private reflection, conditional safeguarding case handling, AI mediation, content rights and trust/operations.
 4. Ports/adapters for persistence, transaction management, identity, object storage, queue/outbox, cache, search, email and AI providers.
 5. Infrastructure selected only after runtime, legal, region, workload, security, cost and operational evaluation.
 
@@ -147,7 +147,7 @@ Scale by evidence, not assumption. First establish workload profiles and operati
 
 ## 9. Acceptance status
 
-The proposed acceptance plan contains BE-001 through BE-074. These are design criteria only. No runtime or acceptance test was executed during this review. Phase 00B runtime assurance and content provenance remain open and are not closed by this architecture review.
+The proposed acceptance plan contains BE-001 through BE-075. These are design criteria only. No runtime or acceptance test was executed during this review. Phase 00B runtime assurance and content provenance remain open and are not closed by this architecture review.
 
 ## 10. Phase 00C non-goals and disposition
 
