@@ -60,3 +60,22 @@ The owner supports multiple learner profiles under one parent/guardian account, 
 Add a Care & Access Pathway for legally appointed guardians, verified kinship/foster/alternative care, appropriately authorized institutional representatives, and children with no verified caregiver. Do not grant authority based solely on relationship claims, church role, employment or institutional affiliation. Where authority is unresolved, restrict access to public, non-personalized content and do not create sensitive personal records until a lawful pathway is established.
 
 The product is explicitly Christian but must be transparent and respectful toward non-Christian/non-religious households. Do not infer belief from behavior or use child data for coercive religious targeting. See LEARNER_IDENTITY_PROGRESSIVE_AUTONOMY_AND_CARE_PATHWAY.md for the detailed proposal and legal-review requirements.
+
+
+## 10. Evidence and authority review addendum — 2026-11-09
+
+### Mandatory conceptual separation
+- **Legal authority** identifies who may authorize a particular processing activity or act for a learner under applicable law.
+- **Account autonomy** identifies what the product allows a learner or account holder to do.
+- **Spiritual development** informs learning experiences only. It is never a legal-capacity score, consent substitute, identity-verification signal or authorization input.
+
+The 3–7, 8–13, 14–17 and 18+ experiences are proposed product bands, not universal legal age categories. A 14–17 experience must not be interpreted as independent legal consent. Age assurance, child status, parental responsibility, guardian authority, assent and consent must be evaluated separately for each jurisdiction and purpose.
+
+### Verified state and proposals
+- **Verified:** Phase 00B found a simulated client-side onboarding flow and no verified account/session service in the reviewed repository tree.
+- **Proposed:** trusted authentication, resource-level hybrid RBAC/ABAC/ReBAC, purpose-specific consent records, authority verification, scoped family projections, progressive autonomy and the Care & Access Pathway.
+- **Assumption:** one account may manage multiple learner profiles while each learner retains an isolated privacy and authorization boundary; this is an owner-supported product direction, not an implemented capability.
+- **Unresolved:** identity provider, recovery model, evidence standards, authority disputes, caregiver review/expiry, jurisdiction-specific consent thresholds, emergency disclosure, age assurance, retention and adult-transition exceptions.
+- **Approval:** qualified local legal and safeguarding review plus owner approval are required before real minor accounts, guardian access or sensitive processing are enabled.
+
+No parent, relative, church leader, mentor, teacher, caregiver or institutional employee receives access solely because of a relationship label, job title or self-declaration. A verified relationship is still not blanket access to every resource.
