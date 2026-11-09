@@ -9,11 +9,15 @@ Create audit branch and foundational documents; verify findings against code; co
 - **Exit:** reproducible runtime baseline, provider map, rights register and owner-reviewed risk disposition. Static review alone does not satisfy exit.
 
 ## Phase 00C — Preliminary backend architecture design
-- **Created:** nine provider-neutral design documents covering architecture vision, domain boundaries, trust/data flows, database/storage requirements, identity/authorization/consent, API/service contracts, infrastructure evaluation, architecture decisions and acceptance tests.
-- **Status:** design package created on the audit branch; owner review and approval outstanding.
-- **Constraints:** no production provider selected; no physical database schema; no source-code changes; no deployment, privileged operations or real-data migration.
-- **Outstanding parallel gates:** runtime/build/browser assurance and Bible/content provenance remain open under Phase 00B.
-- **Exit:** owner reviews domain boundaries, privacy model, provider evaluation criteria, unresolved decisions and test plan; only then proceed to Phase 00D requirements/evaluation.
+- **Created and reviewed:** nine provider-neutral architecture documents plus BACKEND_ARCHITECTURE_REVIEW_RECORD.md.
+- **Status:** documentation review complete on project-sentinel/phase-00-audit; owner approval and legal/security review remain outstanding.
+- **Architecture direction:** modular monolith, explicit domain ownership, server-side resource authorization, Central Growth Record service contract, separate private-reflection boundary, typed/versioned contracts and replaceable infrastructure adapters.
+- **Candidate evaluation only:** Google Cloud Run and managed PostgreSQL are leading candidates to assess; neither is selected for production.
+- **Constraints:** no physical schema, production vendor/region selection, source-code changes, deployment, privileged operations or real-data migration.
+- **Environment:** owner confirms development in Google AI Studio; the app is not deployed or hosted. Repository placeholders and standalone-output configuration do not prove deployment.
+- **Source dependency:** audit branch is 40 commits ahead of and 3 behind current main; main-only UI/component changes must be reconciled before implementation. No merge was performed in this milestone.
+- **Outstanding parallel gates:** runtime/build/browser assurance, jurisdiction/privacy/safeguarding review and Bible/content provenance remain separate and open.
+- **Exit:** owner approves logical boundaries, unresolved decisions, provider evaluation criteria, operational targets and test plan; implementation still waits for runtime, legal, security and source-reconciliation gates.
 
 ## Phase 01 — Identity, authorization and persistence
 Select/verify authentication and database providers. Define account/learner ownership, family relationship, consent and resource authorization. Establish migrations, audit logging, secrets management and test harness. Exit: validated identity and persistence contracts.
