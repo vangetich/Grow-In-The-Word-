@@ -303,3 +303,32 @@ Proposed design/governance tests; not implemented or executed. The detailed acce
 | EA-COMP-023 | Policy decisions are explainable | Rule IDs, source versions, evidence and reasons are recorded | Design review |
 | EA-COMP-024 | Legal change control is connected to tests | Each material legal change triggers impact assessment | Governance review |
 | EA-COMP-025 | Desk research cannot approve launch | Launch requires counsel, technical and operational evidence | Governance gate |
+
+## 14. Jurisdiction catalogue and policy-decision specification acceptance
+
+The detailed 50-vector policy suite is maintained in `PHASE_00D_POLICY_TEST_VECTORS.md`. The catalogue and decision contract are maintained in `PHASE_00D_JURISDICTION_RULE_CATALOGUE.md` and `PHASE_00D_POLICY_DECISION_SPECIFICATION.md`.
+
+| ID | Review / acceptance test | Expected result | Stage |
+|---|---|---|---|
+| PDS-001 | Validate required rule-record fields | Every rule has ID, class, jurisdiction, territory, source/status, applicability, decision effect, tests, owner and review date | Design review |
+| PDS-002 | Inspect rule classification | LAW, REG, BASELINE, OPEN, OPS and IP remain distinct; no product baseline is described as legislation | Design review |
+| PDS-003 | Inspect source status and commencement | Unverified, superseded or uncertain source cannot be marked approved | Source review |
+| PDS-004 | Inspect Tanzania territory representation | Mainland and Zanzibar non-Union questions remain separately represented; no silent inheritance | Design review |
+| PDS-005 | Inspect Rwanda age semantics | Under-16 Art.9 consent trigger remains distinct from under-18 child-protection baseline | Design review |
+| PDS-006 | Inspect age and authority facts | Unknown age/authority cannot be treated as adult/authorized | Design review |
+| PDS-007 | Inspect purpose separation | Profile, AI, voice, analytics, sharing, sponsorship and model training are independently evaluated | Design review |
+| PDS-008 | Inspect sensitive belief handling | Belief/reflection data is not inferred or downgraded; default AI/analytics exclusion is explicit | Design review |
+| PDS-009 | Inspect provider gates | Transfer and storage authorization are separately evaluated, including Rwanda Art.50 | Design review |
+| PDS-010 | Inspect content rights rules | Licence is checked by work, edition, territory, medium, purpose and technical use | Design review |
+| PDS-011 | Inspect decision precedence | DENY dominates; otherwise HOLD dominates; controls are enforceable; unknown is not permissive | Design review |
+| PDS-012 | Inspect audit response | Decision records identify policy version and rule IDs without storing journal text or raw identity documents | Design review |
+| PDS-013 | Inspect exception lifecycle | Exception has named approver, scope, rationale, expiry, compensating controls and review evidence | Design review |
+| PDS-014 | Inspect future enforcement boundary | Decisions are enforced server-side; UI-only permission checks are rejected | Architecture review |
+| PDS-015 | Trace all catalogue rules to tests | Every rule maps to one or more test IDs and evidence requirements | Traceability review |
+| PDS-016 | Inspect OPEN rule outcomes | OPEN/SUSPENDED rules cannot produce ALLOW | Design review |
+| PDS-017 | Inspect prohibited inputs | Spiritual maturity, XP, engagement and inferred religion cannot influence legal permission | Architecture review |
+| PDS-018 | Inspect approval state | No rule becomes implementation-eligible before source validation, owner approval and required counsel review | Governance review |
+| PDS-019 | Execute policy vectors in a future synthetic test harness | All 50 vectors pass against approved policy version; not a current-phase runtime test | Future implementation |
+| PDS-020 | Reconcile Phase 00C contracts | Specification adds no conflicting identity, authorization, consent or data-boundary assumptions | Architecture review |
+
+**Current status:** Defined as draft documentation only. PDS-001–PDS-020 have not been independently reviewed or executed. The policy vectors are proposed test cases, not passed results.
