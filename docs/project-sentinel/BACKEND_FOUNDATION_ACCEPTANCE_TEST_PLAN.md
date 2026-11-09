@@ -117,6 +117,7 @@ These criteria extend BE-001 through BE-060. They are proposed tests and have no
 | BE-072 | Migration preflight encounters seeded/demo/browser-local values of uncertain provenance | Values are quarantined or excluded; no silent conversion into verified learner history |
 | BE-073 | Load test runs against owner-approved expected and peak workload profiles | Measured latency, throughput, error rate and resource use meet approved operation-specific targets |
 | BE-074 | A Phase 00C document or review is used to justify deployment, provider selection or privileged implementation without required approvals | Governance gate rejects the change; evidence and approval record are required |
+| BE-075 | An unassigned staff member, parent, mentor or AI workflow requests a safeguarding case | Denied; case details remain outside family projections, ordinary analytics and AI context; access is redacted and audited |
 
 ### Evidence and execution status
 - **Verified:** the current repository evidence and the absence of runtime execution are recorded in the Phase 00B evidence report.
