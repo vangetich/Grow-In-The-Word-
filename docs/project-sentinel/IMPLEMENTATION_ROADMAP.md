@@ -63,3 +63,13 @@ Every milestone needs scope, affected modules, dependency check, migration plan,
 - **Status:** draft synthesis; owner review and local counsel review outstanding in all four jurisdictions.
 - **Constraints:** no application source changes; no Phase 00C architecture rewrite; no jurisdiction engine implementation; no provider selection; no real child-data processing; no launch approval.
 - **Next exit evidence:** owner review, jurisdiction-specific counsel answers, current-source verification, approved rule catalogue and traceable policy test cases.
+
+## Phase 00D — Jurisdiction rule catalogue and policy decision specification
+
+- **Created:** `PHASE_00D_JURISDICTION_RULE_CATALOGUE.md`, `PHASE_00D_POLICY_DECISION_SPECIFICATION.md`, and `PHASE_00D_POLICY_TEST_VECTORS.md`.
+- **Acceptance coverage:** PDS-001–PDS-020 added to `PHASE_00D_ACCEPTANCE_CRITERIA_AND_TEST_PLAN.md`; 50 proposed synthetic policy vectors cover age/jurisdiction differences, authority, sensitive data, AI, transfer/storage, rights and fail-safe behavior.
+- **Design:** rule classes LAW, REG, BASELINE, OPEN, OPS and IP; explicit rule lifecycle; required provenance and applicability fields; deterministic decision pipeline; DENY/HOLD precedence; server-side enforcement boundary.
+- **Key distinctions preserved:** product under-18 safeguarding baseline is not a universal statutory consent age; Rwanda under-16 Art.9 trigger is separate from under-18 protection; Tanzania Mainland and Zanzibar non-Union matters are not interchangeable; Rwanda foreign storage authorization is separate from transfer safeguards.
+- **Status:** draft documentation only; source validation, owner approval and local counsel review remain outstanding. No rule is implementation-eligible.
+- **Constraints:** no application source/UI changes; no Phase 00C rewrite; no policy engine, schema, provider selection, real child-data processing or launch approval.
+- **Next exit evidence:** source-by-source legal review, Zanzibar assessment, owner-approved policy outcomes, accountable roles, exception process, synthetic test review and explicit authorization for a later implementation phase.
