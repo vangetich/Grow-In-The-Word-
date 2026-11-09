@@ -124,3 +124,32 @@ These criteria extend BE-001 through BE-060. They are proposed tests and have no
 - **Assumption:** the eventual test harness can exercise domain services, persistence adapters, policy decisions and deployment controls.
 - **Unresolved:** test framework, CI platform, test data strategy, performance profiles, RPO/RTO, revocation SLA and legal acceptance thresholds.
 - **Approval:** owner and security/privacy/legal reviewers must approve thresholds before the tests can be considered release gates. No test in this plan is marked passed.
+
+
+## 10. Additional governance, privacy and operational acceptance tests
+
+These criteria extend BE-001 through BE-060. They are proposed tests and have not been implemented or executed.
+
+| ID | Test | Expected result |
+|---|---|---|
+| BE-061 | Consent exists for one purpose, but a request attempts a different purpose or data category | Denied unless a separately valid basis/authority and required safeguards exist |
+| BE-062 | Client submits a guardian, caregiver, mentor or institutional authority claim without verified evidence | No privileged relationship or learner access is created |
+| BE-063 | A learner enters the 14–17 product experience | Product autonomy settings do not automatically establish legal capacity or independent consent |
+| BE-064 | A learner has no verified caregiver or authority pathway | Public non-personalized learning remains available; personal tracking and sensitive processing remain disabled |
+| BE-065 | A learner reaches the adult transition threshold | Former guardian access is revoked by default unless a fresh lawful authorization or verified legal exception applies |
+| BE-066 | A deletion/correction request is approved | Change propagates to authorized projections, caches, search indexes, object versions and processors; backup/legal-retention exceptions are documented |
+| BE-067 | Journal or religious-reflection content is submitted to ordinary CGR, analytics, search, family projection or AI context | Content is excluded or rejected; only separately approved minimal metadata may be processed |
+| BE-068 | A processor, region, subprocessor or support path is not approved for the data category and purpose | Transfer/processing is blocked pending policy and legal review |
+| BE-069 | A log or trace captures credentials, journal body, private prompt content or unnecessary child data | Test fails; redaction and restricted audit handling are enforced |
+| BE-070 | Authorization/consent policy evaluation is unavailable or stale for a protected action | Fail closed; no stale cache may grant access |
+| BE-071 | Backup restore is performed | Recovery meets owner-approved RPO/RTO and proves integrity and access controls |
+| BE-072 | Migration preflight encounters seeded/demo/browser-local values of uncertain provenance | Values are quarantined or excluded; no silent conversion into verified learner history |
+| BE-073 | Load test runs against owner-approved expected and peak workload profiles | Measured latency, throughput, error rate and resource use meet approved operation-specific targets |
+| BE-074 | A Phase 00C document or review is used to justify deployment, provider selection or privileged implementation without required approvals | Governance gate rejects the change; evidence and approval record are required |
+
+### Evidence and execution status
+- **Verified:** the current repository evidence and the absence of runtime execution are recorded in the Phase 00B evidence report.
+- **Proposed:** all BE acceptance criteria in this plan.
+- **Assumption:** the eventual test harness can exercise domain services, persistence adapters, policy decisions and deployment controls.
+- **Unresolved:** test framework, CI platform, test data strategy, performance profiles, RPO/RTO, revocation SLA and legal acceptance thresholds.
+- **Approval:** owner and security/privacy/legal reviewers must approve thresholds before the tests can be considered release gates. No test in this plan is marked passed.
