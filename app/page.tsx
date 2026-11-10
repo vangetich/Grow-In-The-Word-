@@ -12,6 +12,8 @@ import MissionAboutSection from '@/components/MissionAboutSection';
 import EvidenceSection from '@/components/EvidenceSection';
 import DesignSpecInspector from '@/components/DesignSpecInspector';
 import FaqSection from '@/components/FaqSection';
+import FeaturesOverviewSection from '@/components/FeaturesOverviewSection';
+import ParentEndorsementsSection from '@/components/ParentEndorsementsSection';
 import AdminBackendMaintenanceSection from '@/components/AdminBackendMaintenanceSection';
 import EvidenceAndFooterSection from '@/components/EvidenceAndFooterSection';
 import JourneyOnboardingModal from '@/components/JourneyOnboardingModal';
@@ -608,6 +610,11 @@ export default function HomePage() {
           />
         </div>
 
+        {/* Features Overview Section — Breaking Down Bedtime Sanctuary, Historical Archive & Safe Harbor */}
+        <div data-scroll-reveal="true" className={scrollRevealClassName}>
+          <FeaturesOverviewSection onOpenJourneyModal={handleOpenJourneyModal} />
+        </div>
+
         {/* Dedicated Formation Studios Directory (Individual Pages) */}
         <div data-scroll-reveal="true" className={scrollRevealClassName}>
           <section
@@ -946,6 +953,10 @@ export default function HomePage() {
 
         <div data-scroll-reveal="true" className={scrollRevealClassName}>
           <DesignSpecInspector onOpenJourneyModal={handleOpenJourneyModal} />
+        </div>
+
+        <div data-scroll-reveal="true" className={scrollRevealClassName}>
+          <ParentEndorsementsSection onOpenJourneyModal={handleOpenJourneyModal} />
         </div>
 
         <div data-scroll-reveal="true" className={scrollRevealClassName}>
